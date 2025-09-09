@@ -1,0 +1,6 @@
+com\medsync\cadastroagendamento\application\usecases\AtualizarConsultaUseCaseTest.class
+com\medsync\cadastroagendamento\application\usecases\BuscarUsuarioUseCaseTest.class
+com\medsync\cadastroagendamento\application\usecases\CriarConsultaUseCaseTest.class
+com\medsync\cadastroagendamento\application\usecases\AtualizarUsuarioUseCaseTest.class
+com\medsync\cadastroagendamento\application\usecases\AutenticarUsuarioUseCaseTest.class
+com\medsync\cadastroagendamento\application\usecases\CriarUsuarioUseCaseTest.class
