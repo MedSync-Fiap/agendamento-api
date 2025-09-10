@@ -24,7 +24,6 @@ public class ConsultaEditadaEvent {
         this.timestamp = timestamp;
     }
 
-    // Getters and Setters
     public UUID getConsultaId() {
         return consultaId;
     }

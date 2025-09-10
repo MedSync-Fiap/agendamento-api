@@ -9,17 +9,22 @@ import com.medsync.cadastroagendamento.domain.entities.Usuario;
 import com.medsync.cadastroagendamento.domain.enums.StatusConsulta;
 import com.medsync.cadastroagendamento.domain.gateways.ConsultaGateway;
 import com.medsync.cadastroagendamento.domain.gateways.UsuarioGateway;
+import com.medsync.cadastroagendamento.infrastructure.config.properties.AppProperties;
+import com.medsync.cadastroagendamento.infrastructure.config.properties.RabbitMQProperties;
+import com.medsync.cadastroagendamento.presentation.dto.AtualizarConsultaRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -29,6 +34,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 @DisplayName("AtualizarConsultaUseCase Tests")
 class AtualizarConsultaUseCaseTest {
 
@@ -41,6 +47,18 @@ class AtualizarConsultaUseCaseTest {
     @Mock
     private RabbitTemplate rabbitTemplate;
 
+    @Mock
+    private AppProperties appProperties;
+
+    @Mock
+    private RabbitMQProperties rabbitmq;
+
+    @Mock
+    private ValidarConsultaUseCase validarConsultaUseCase;
+
+    @Mock
+    private PublicarEventoConsultaUseCase publicarEventoConsultaUseCase;
+
     @InjectMocks
     private AtualizarConsultaUseCase atualizarConsultaUseCase;
 
@@ -50,7 +68,7 @@ class AtualizarConsultaUseCaseTest {
     private UUID novoMedicoId;
     private LocalDateTime dataHora;
     private LocalDateTime novaDataHora;
-    private AtualizarConsultaUseCase.AtualizarConsultaRequest request;
+    private AtualizarConsultaRequest request;
     private Usuario novoMedico;
 
     @BeforeEach
@@ -72,7 +90,7 @@ class AtualizarConsultaUseCaseTest {
         consulta.setCriadoEm(LocalDateTime.now().minusDays(1));
         consulta.setAtualizadoEm(LocalDateTime.now().minusDays(1));
 
-        request = new AtualizarConsultaUseCase.AtualizarConsultaRequest(
+        request = new AtualizarConsultaRequest(
                 novoMedicoId,
                 novaDataHora,
                 "Nova observação",
@@ -83,6 +101,15 @@ class AtualizarConsultaUseCaseTest {
         novoMedico.setId(novoMedicoId);
         novoMedico.setNome("Dr. João Silva");
         novoMedico.setEmail("joao@email.com");
+
+        when(appProperties.rabbitmq()).thenReturn(rabbitmq);
+        when(rabbitmq.exchangeConsultas()).thenReturn("ex_consultas");
+        when(rabbitmq.routingKeyHistorico()).thenReturn("consulta.historico");
+        when(rabbitmq.routingKeyNotificacoes()).thenReturn("consulta.notificacao");
+
+        // Configurar mocks dos use cases de validação para não lançar exceções por padrão
+        doNothing().when(validarConsultaUseCase).validarAtualizacaoConsulta(any(), any(), any());
+        doNothing().when(publicarEventoConsultaUseCase).publicarConsultaEditada(any(), any(), any());
     }
 
     @Test
@@ -105,9 +132,9 @@ class AtualizarConsultaUseCaseTest {
         assertThat(resultado.getObservacoes()).isEqualTo("Nova observação");
 
         verify(consultaGateway).buscarPorId(consultaId);
-        verify(usuarioGateway).buscarPorId(novoMedicoId);
-        verify(consultaGateway).existeConsultaNoHorarioExcluindo(novoMedicoId, novaDataHora, consultaId);
+        verify(validarConsultaUseCase).validarAtualizacaoConsulta(consultaId, novoMedicoId, novaDataHora);
         verify(consultaGateway).salvar(any(Consulta.class));
+        verify(publicarEventoConsultaUseCase).publicarConsultaEditada(any(Consulta.class), any(UUID.class), any(Map.class));
     }
 
     @Test
@@ -169,8 +196,8 @@ class AtualizarConsultaUseCaseTest {
         // Given
         when(consultaGateway.buscarPorId(consultaId)).thenReturn(Optional.of(consulta));
         when(usuarioGateway.buscarPorId(novoMedicoId)).thenReturn(Optional.of(novoMedico));
-        when(consultaGateway.existeConsultaNoHorarioExcluindo(novoMedicoId, novaDataHora, consultaId))
-                .thenReturn(true);
+        doThrow(new ConflitoHorarioException(novoMedicoId, novaDataHora))
+                .when(validarConsultaUseCase).validarAtualizacaoConsulta(any(), any(), any());
 
         // When & Then
         assertThatThrownBy(() -> atualizarConsultaUseCase.executar(consultaId, request))
@@ -179,7 +206,7 @@ class AtualizarConsultaUseCaseTest {
 
         verify(consultaGateway).buscarPorId(consultaId);
         verify(usuarioGateway).buscarPorId(novoMedicoId);
-        verify(consultaGateway).existeConsultaNoHorarioExcluindo(novoMedicoId, novaDataHora, consultaId);
+        verify(validarConsultaUseCase).validarAtualizacaoConsulta(consultaId, novoMedicoId, novaDataHora);
         verify(consultaGateway, never()).salvar(any(Consulta.class));
     }
 
@@ -187,8 +214,8 @@ class AtualizarConsultaUseCaseTest {
     @DisplayName("Deve atualizar apenas médico quando outros campos não são fornecidos")
     void deveAtualizarApenasMedicoQuandoOutrosCamposNaoSaoFornecidos() {
         // Given
-        AtualizarConsultaUseCase.AtualizarConsultaRequest requestApenasMedico = 
-                new AtualizarConsultaUseCase.AtualizarConsultaRequest(
+        AtualizarConsultaRequest requestApenasMedico = 
+                new AtualizarConsultaRequest(
                         novoMedicoId,
                         null,
                         null,
@@ -218,8 +245,8 @@ class AtualizarConsultaUseCaseTest {
     @DisplayName("Deve atualizar apenas data/hora quando outros campos não são fornecidos")
     void deveAtualizarApenasDataHoraQuandoOutrosCamposNaoSaoFornecidos() {
         // Given
-        AtualizarConsultaUseCase.AtualizarConsultaRequest requestApenasDataHora = 
-                new AtualizarConsultaUseCase.AtualizarConsultaRequest(
+        AtualizarConsultaRequest requestApenasDataHora = 
+                new AtualizarConsultaRequest(
                         null,
                         novaDataHora,
                         null,
@@ -241,8 +268,7 @@ class AtualizarConsultaUseCaseTest {
         assertThat(resultado.getObservacoes()).isEqualTo("Consulta de rotina"); // não alterado
 
         verify(consultaGateway).buscarPorId(consultaId);
-        verify(usuarioGateway, never()).buscarPorId(any());
-        verify(consultaGateway).existeConsultaNoHorarioExcluindo(medicoId, novaDataHora, consultaId);
+        verify(validarConsultaUseCase).validarAtualizacaoConsulta(consultaId, medicoId, novaDataHora);
         verify(consultaGateway).salvar(any(Consulta.class));
     }
 
@@ -250,8 +276,8 @@ class AtualizarConsultaUseCaseTest {
     @DisplayName("Deve atualizar apenas observações quando outros campos não são fornecidos")
     void deveAtualizarApenasObservacoesQuandoOutrosCamposNaoSaoFornecidos() {
         // Given
-        AtualizarConsultaUseCase.AtualizarConsultaRequest requestApenasObservacoes = 
-                new AtualizarConsultaUseCase.AtualizarConsultaRequest(
+        AtualizarConsultaRequest requestApenasObservacoes = 
+                new AtualizarConsultaRequest(
                         null,
                         null,
                         "Nova observação",
@@ -290,15 +316,15 @@ class AtualizarConsultaUseCaseTest {
         atualizarConsultaUseCase.executar(consultaId, request);
 
         // Then
-        verify(rabbitTemplate, times(2)).convertAndSend(anyString(), anyString(), (Object) any());
+        verify(publicarEventoConsultaUseCase).publicarConsultaEditada(any(Consulta.class), any(UUID.class), any(Map.class));
     }
 
     @Test
     @DisplayName("Não deve publicar eventos quando não há alterações")
     void naoDevePublicarEventosQuandoNaoHaAlteracoes() {
         // Given
-        AtualizarConsultaUseCase.AtualizarConsultaRequest requestSemAlteracoes = 
-                new AtualizarConsultaUseCase.AtualizarConsultaRequest(
+        AtualizarConsultaRequest requestSemAlteracoes = 
+                new AtualizarConsultaRequest(
                         null,
                         null,
                         null,

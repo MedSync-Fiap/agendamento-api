@@ -4,6 +4,7 @@ import com.medsync.cadastroagendamento.application.exceptions.EmailJaExisteExcep
 import com.medsync.cadastroagendamento.application.exceptions.UsuarioNaoEncontradoException;
 import com.medsync.cadastroagendamento.domain.entities.Usuario;
 import com.medsync.cadastroagendamento.domain.gateways.UsuarioGateway;
+import com.medsync.cadastroagendamento.presentation.dto.AtualizarUsuarioRequest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
@@ -22,18 +23,23 @@ public class AtualizarUsuarioUseCase {
     }
     
     public Usuario executar(UUID id, AtualizarUsuarioRequest request) {
-        Usuario usuario = usuarioGateway.buscarPorId(id)
+        Usuario usuario = buscarUsuario(id);
+        atualizarCamposUsuario(usuario, request);
+        usuario.setAtualizadoEm(LocalDateTime.now());
+        return usuarioGateway.salvar(usuario);
+    }
+    
+    private Usuario buscarUsuario(UUID id) {
+        return usuarioGateway.buscarPorId(id)
                 .orElseThrow(() -> new UsuarioNaoEncontradoException(id));
-        
-        // Verificar se email já existe em outro usuário
+    }
+    
+    private void atualizarCamposUsuario(Usuario usuario, AtualizarUsuarioRequest request) {
         if (request.email() != null && !request.email().equals(usuario.getEmail())) {
-            if (usuarioGateway.existePorEmail(request.email())) {
-                throw new EmailJaExisteException(request.email());
-            }
+            validarEmailNaoExiste(request.email());
             usuario.setEmail(request.email());
         }
         
-        // Atualizar campos
         if (request.nome() != null) {
             usuario.setNome(request.nome());
         }
@@ -45,16 +51,11 @@ public class AtualizarUsuarioUseCase {
         if (request.roleId() != null) {
             usuario.setRoleId(request.roleId());
         }
-        
-        usuario.setAtualizadoEm(LocalDateTime.now());
-        
-        return usuarioGateway.salvar(usuario);
     }
     
-    public record AtualizarUsuarioRequest(
-        String nome,
-        String email,
-        String senha,
-        UUID roleId
-    ) {}
+    private void validarEmailNaoExiste(String email) {
+        if (usuarioGateway.existePorEmail(email)) {
+            throw new EmailJaExisteException(email);
+        }
+    }
 }

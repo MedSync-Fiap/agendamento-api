@@ -31,7 +31,6 @@ public class Consulta {
         this.atualizadoEm = atualizadoEm;
     }
 
-    // Getters and Setters
     public UUID getId() {
         return id;
     }
@@ -104,7 +103,6 @@ public class Consulta {
         this.atualizadoEm = atualizadoEm;
     }
 
-    // Business methods
     public void agendar() {
         this.status = StatusConsulta.AGENDADA;
         this.atualizadoEm = LocalDateTime.now();

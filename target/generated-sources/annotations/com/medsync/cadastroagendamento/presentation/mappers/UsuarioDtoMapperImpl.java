@@ -1,9 +1,9 @@
 package com.medsync.cadastroagendamento.presentation.mappers;
 
-import com.medsync.cadastroagendamento.application.usecases.CriarUsuarioUseCase;
 import com.medsync.cadastroagendamento.domain.entities.Telefone;
 import com.medsync.cadastroagendamento.domain.entities.Usuario;
 import com.medsync.cadastroagendamento.domain.enums.TipoTelefone;
+import com.medsync.cadastroagendamento.presentation.dto.AtualizarUsuarioRequest;
 import com.medsync.cadastroagendamento.presentation.dto.CriarUsuarioRequest;
 import com.medsync.cadastroagendamento.presentation.dto.TelefoneResponse;
 import com.medsync.cadastroagendamento.presentation.dto.UsuarioResponse;
@@ -16,14 +16,14 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-09-09T20:03:56-0300",
+    date = "2025-09-09T22:23:07-0300",
     comments = "version: 1.5.5.Final, compiler: javac, environment: Java 21.0.6 (Amazon.com Inc.)"
 )
 @Component
 public class UsuarioDtoMapperImpl implements UsuarioDtoMapper {
 
     @Override
-    public CriarUsuarioUseCase.CriarUsuarioRequest toUseCaseRequest(CriarUsuarioRequest dto) {
+    public CriarUsuarioRequest toUseCaseRequest(CriarUsuarioRequest dto) {
         if ( dto == null ) {
             return null;
         }
@@ -40,9 +40,30 @@ public class UsuarioDtoMapperImpl implements UsuarioDtoMapper {
         senha = dto.senha();
         roleId = dto.roleId();
 
-        CriarUsuarioUseCase.CriarUsuarioRequest criarUsuarioRequest = new CriarUsuarioUseCase.CriarUsuarioRequest( nome, cpf, email, senha, roleId );
+        CriarUsuarioRequest criarUsuarioRequest = new CriarUsuarioRequest( nome, cpf, email, senha, roleId );
 
         return criarUsuarioRequest;
+    }
+
+    @Override
+    public AtualizarUsuarioRequest toUseCaseRequest(AtualizarUsuarioRequest dto) {
+        if ( dto == null ) {
+            return null;
+        }
+
+        String nome = null;
+        String email = null;
+        String senha = null;
+        UUID roleId = null;
+
+        nome = dto.nome();
+        email = dto.email();
+        senha = dto.senha();
+        roleId = dto.roleId();
+
+        AtualizarUsuarioRequest atualizarUsuarioRequest = new AtualizarUsuarioRequest( nome, email, senha, roleId );
+
+        return atualizarUsuarioRequest;
     }
 
     @Override

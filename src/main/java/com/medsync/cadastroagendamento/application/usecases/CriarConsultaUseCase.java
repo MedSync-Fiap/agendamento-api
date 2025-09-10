@@ -1,15 +1,9 @@
 package com.medsync.cadastroagendamento.application.usecases;
 
-import com.medsync.cadastroagendamento.application.exceptions.ConflitoHorarioException;
-import com.medsync.cadastroagendamento.application.exceptions.UsuarioNaoEncontradoException;
 import com.medsync.cadastroagendamento.domain.entities.Consulta;
-import com.medsync.cadastroagendamento.domain.entities.Usuario;
 import com.medsync.cadastroagendamento.domain.enums.StatusConsulta;
-import com.medsync.cadastroagendamento.domain.events.ConsultaCriadaEvent;
 import com.medsync.cadastroagendamento.domain.gateways.ConsultaGateway;
-import com.medsync.cadastroagendamento.domain.gateways.UsuarioGateway;
-import com.medsync.cadastroagendamento.infrastructure.config.RabbitMQConfig;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import com.medsync.cadastroagendamento.presentation.dto.CriarConsultaRequest;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
@@ -19,36 +13,29 @@ import java.util.UUID;
 public class CriarConsultaUseCase {
     
     private final ConsultaGateway consultaGateway;
-    private final UsuarioGateway usuarioGateway;
-    private final RabbitTemplate rabbitTemplate;
+    private final ValidarConsultaUseCase validarConsultaUseCase;
+    private final PublicarEventoConsultaUseCase publicarEventoConsultaUseCase;
     
-    public CriarConsultaUseCase(ConsultaGateway consultaGateway, 
-                                UsuarioGateway usuarioGateway,
-                                RabbitTemplate rabbitTemplate) {
+    public CriarConsultaUseCase(ConsultaGateway consultaGateway,
+                                ValidarConsultaUseCase validarConsultaUseCase,
+                                PublicarEventoConsultaUseCase publicarEventoConsultaUseCase) {
         this.consultaGateway = consultaGateway;
-        this.usuarioGateway = usuarioGateway;
-        this.rabbitTemplate = rabbitTemplate;
+        this.validarConsultaUseCase = validarConsultaUseCase;
+        this.publicarEventoConsultaUseCase = publicarEventoConsultaUseCase;
     }
     
     public Consulta executar(CriarConsultaRequest request) {
-        // Validar se paciente existe
-        Usuario paciente = usuarioGateway.buscarPorId(request.pacienteId())
-                .orElseThrow(() -> new UsuarioNaoEncontradoException(request.pacienteId()));
+        validarConsultaUseCase.validarCriacaoConsulta(request);
         
-        // Validar se médico existe
-        Usuario medico = usuarioGateway.buscarPorId(request.medicoId())
-                .orElseThrow(() -> new UsuarioNaoEncontradoException(request.medicoId()));
+        Consulta consulta = criarConsulta(request);
+        Consulta consultaSalva = consultaGateway.salvar(consulta);
         
-        // Validar se usuário que está criando existe
-        Usuario criadoPor = usuarioGateway.buscarPorId(request.criadoPorId())
-                .orElseThrow(() -> new UsuarioNaoEncontradoException(request.criadoPorId()));
+        publicarEventoConsultaUseCase.publicarConsultaCriada(consultaSalva);
         
-        // Verificar conflito de horário
-        if (consultaGateway.existeConsultaNoHorario(request.medicoId(), request.dataHora())) {
-            throw new ConflitoHorarioException(request.medicoId(), request.dataHora());
-        }
-        
-        // Criar consulta
+        return consultaSalva;
+    }
+    
+    private Consulta criarConsulta(CriarConsultaRequest request) {
         Consulta consulta = new Consulta();
         consulta.setId(UUID.randomUUID());
         consulta.setPacienteId(request.pacienteId());
@@ -59,35 +46,6 @@ public class CriarConsultaUseCase {
         consulta.setObservacoes(request.observacoes());
         consulta.setCriadoEm(LocalDateTime.now());
         consulta.setAtualizadoEm(LocalDateTime.now());
-        
-        Consulta consultaSalva = consultaGateway.salvar(consulta);
-        
-        // Publicar eventos para RabbitMQ
-        ConsultaCriadaEvent evento = new ConsultaCriadaEvent(
-            consultaSalva.getId(),
-            consultaSalva.getPacienteId(),
-            consultaSalva.getMedicoId(),
-            consultaSalva.getCriadoPorId(),
-            consultaSalva.getDataHora(),
-            LocalDateTime.now()
-        );
-        
-        // Enviar para fila de histórico
-        rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_CONSULTAS, 
-                                     "consulta.criada.historico", evento);
-        
-        // Enviar para fila de notificações
-        rabbitTemplate.convertAndSend(RabbitMQConfig.EXCHANGE_CONSULTAS, 
-                                     "consulta.criada.notificacao", evento);
-        
-        return consultaSalva;
+        return consulta;
     }
-    
-    public record CriarConsultaRequest(
-        UUID pacienteId,
-        UUID medicoId,
-        UUID criadoPorId,
-        LocalDateTime dataHora,
-        String observacoes
-    ) {}
 }

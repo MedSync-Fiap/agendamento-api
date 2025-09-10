@@ -4,6 +4,7 @@ import com.medsync.cadastroagendamento.application.exceptions.EmailJaExisteExcep
 import com.medsync.cadastroagendamento.application.exceptions.UsuarioNaoEncontradoException;
 import com.medsync.cadastroagendamento.domain.entities.Usuario;
 import com.medsync.cadastroagendamento.domain.gateways.UsuarioGateway;
+import com.medsync.cadastroagendamento.presentation.dto.AtualizarUsuarioRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -37,7 +38,7 @@ class AtualizarUsuarioUseCaseTest {
 
     private Usuario usuario;
     private UUID usuarioId;
-    private AtualizarUsuarioUseCase.AtualizarUsuarioRequest request;
+    private AtualizarUsuarioRequest request;
 
     @BeforeEach
     void setUp() {
@@ -54,7 +55,7 @@ class AtualizarUsuarioUseCaseTest {
         usuario.setCriadoEm(LocalDateTime.now().minusDays(1));
         usuario.setAtualizadoEm(LocalDateTime.now().minusDays(1));
 
-        request = new AtualizarUsuarioUseCase.AtualizarUsuarioRequest(
+        request = new AtualizarUsuarioRequest(
                 "João Silva Atualizado",
                 "joao.novo@email.com",
                 "nova_senha123",
@@ -123,8 +124,8 @@ class AtualizarUsuarioUseCaseTest {
     @DisplayName("Deve permitir manter o mesmo email do usuário")
     void devePermitirManterMesmoEmailDoUsuario() {
         // Given
-        AtualizarUsuarioUseCase.AtualizarUsuarioRequest requestMesmoEmail = 
-                new AtualizarUsuarioUseCase.AtualizarUsuarioRequest(
+        AtualizarUsuarioRequest requestMesmoEmail = 
+                new AtualizarUsuarioRequest(
                         "João Silva Atualizado",
                         "joao@email.com", // mesmo email
                         "nova_senha123",
@@ -151,8 +152,8 @@ class AtualizarUsuarioUseCaseTest {
     @DisplayName("Deve atualizar apenas nome quando outros campos não são fornecidos")
     void deveAtualizarApenasNomeQuandoOutrosCamposNaoFornecidos() {
         // Given
-        AtualizarUsuarioUseCase.AtualizarUsuarioRequest requestApenasNome = 
-                new AtualizarUsuarioUseCase.AtualizarUsuarioRequest(
+        AtualizarUsuarioRequest requestApenasNome = 
+                new AtualizarUsuarioRequest(
                         "João Silva Atualizado",
                         null,
                         null,
@@ -181,8 +182,8 @@ class AtualizarUsuarioUseCaseTest {
     @DisplayName("Deve atualizar apenas email quando outros campos não são fornecidos")
     void deveAtualizarApenasEmailQuandoOutrosCamposNaoFornecidos() {
         // Given
-        AtualizarUsuarioUseCase.AtualizarUsuarioRequest requestApenasEmail = 
-                new AtualizarUsuarioUseCase.AtualizarUsuarioRequest(
+        AtualizarUsuarioRequest requestApenasEmail = 
+                new AtualizarUsuarioRequest(
                         null,
                         "novo@email.com",
                         null,
@@ -212,8 +213,8 @@ class AtualizarUsuarioUseCaseTest {
     @DisplayName("Deve atualizar apenas senha quando outros campos não são fornecidos")
     void deveAtualizarApenasSenhaQuandoOutrosCamposNaoFornecidos() {
         // Given
-        AtualizarUsuarioUseCase.AtualizarUsuarioRequest requestApenasSenha = 
-                new AtualizarUsuarioUseCase.AtualizarUsuarioRequest(
+        AtualizarUsuarioRequest requestApenasSenha = 
+                new AtualizarUsuarioRequest(
                         null,
                         null,
                         "nova_senha123",

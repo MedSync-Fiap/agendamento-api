@@ -1,5 +1,6 @@
 package com.medsync.cadastroagendamento.infrastructure.config;
 
+import com.medsync.cadastroagendamento.infrastructure.config.properties.AppProperties;
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -11,23 +12,25 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class RabbitMQConfig {
     
-    public static final String EXCHANGE_CONSULTAS = "ex_consultas";
-    public static final String FILA_HISTORICO = "fila_historico";
-    public static final String FILA_NOTIFICACOES = "fila_notificacoes";
+    private final AppProperties appProperties;
+    
+    public RabbitMQConfig(AppProperties appProperties) {
+        this.appProperties = appProperties;
+    }
     
     @Bean
     public TopicExchange exchangeConsultas() {
-        return new TopicExchange(EXCHANGE_CONSULTAS);
+        return new TopicExchange(appProperties.rabbitmq().exchangeConsultas());
     }
     
     @Bean
     public Queue filaHistorico() {
-        return QueueBuilder.durable(FILA_HISTORICO).build();
+        return QueueBuilder.durable(appProperties.rabbitmq().queueHistorico()).build();
     }
     
     @Bean
     public Queue filaNotificacoes() {
-        return QueueBuilder.durable(FILA_NOTIFICACOES).build();
+        return QueueBuilder.durable(appProperties.rabbitmq().queueNotificacoes()).build();
     }
     
     @Bean
@@ -35,7 +38,7 @@ public class RabbitMQConfig {
         return BindingBuilder
                 .bind(filaHistorico())
                 .to(exchangeConsultas())
-                .with("consulta.*.historico");
+                .with(appProperties.rabbitmq().routingKeyHistorico());
     }
     
     @Bean
@@ -43,7 +46,7 @@ public class RabbitMQConfig {
         return BindingBuilder
                 .bind(filaNotificacoes())
                 .to(exchangeConsultas())
-                .with("consulta.*.notificacao");
+                .with(appProperties.rabbitmq().routingKeyNotificacoes());
     }
     
     @Bean

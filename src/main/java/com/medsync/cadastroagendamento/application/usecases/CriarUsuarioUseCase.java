@@ -4,6 +4,7 @@ import com.medsync.cadastroagendamento.application.exceptions.CpfJaExisteExcepti
 import com.medsync.cadastroagendamento.application.exceptions.EmailJaExisteException;
 import com.medsync.cadastroagendamento.domain.entities.Usuario;
 import com.medsync.cadastroagendamento.domain.gateways.UsuarioGateway;
+import com.medsync.cadastroagendamento.presentation.dto.CriarUsuarioRequest;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
@@ -22,17 +23,26 @@ public class CriarUsuarioUseCase {
     }
     
     public Usuario executar(CriarUsuarioRequest request) {
-        // Validar se email já existe
-        if (usuarioGateway.existePorEmail(request.email())) {
-            throw new EmailJaExisteException(request.email());
-        }
+        validarEmailNaoExiste(request.email());
+        validarCpfNaoExiste(request.cpf());
         
-        // Validar se CPF já existe
-        if (usuarioGateway.existePorCpf(request.cpf())) {
-            throw new CpfJaExisteException(request.cpf());
+        Usuario usuario = criarUsuario(request);
+        return usuarioGateway.salvar(usuario);
+    }
+    
+    private void validarEmailNaoExiste(String email) {
+        if (usuarioGateway.existePorEmail(email)) {
+            throw new EmailJaExisteException(email);
         }
-        
-        // Criar usuário
+    }
+    
+    private void validarCpfNaoExiste(String cpf) {
+        if (usuarioGateway.existePorCpf(cpf)) {
+            throw new CpfJaExisteException(cpf);
+        }
+    }
+    
+    private Usuario criarUsuario(CriarUsuarioRequest request) {
         Usuario usuario = new Usuario();
         usuario.setId(UUID.randomUUID());
         usuario.setNome(request.nome());
@@ -43,15 +53,6 @@ public class CriarUsuarioUseCase {
         usuario.setAtivo(true);
         usuario.setCriadoEm(LocalDateTime.now());
         usuario.setAtualizadoEm(LocalDateTime.now());
-        
-        return usuarioGateway.salvar(usuario);
+        return usuario;
     }
-    
-    public record CriarUsuarioRequest(
-        String nome,
-        String cpf,
-        String email,
-        String senha,
-        UUID roleId
-    ) {}
 }

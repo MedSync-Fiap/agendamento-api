@@ -1,10 +1,9 @@
 package com.medsync.cadastroagendamento.presentation.mappers;
 
-import com.medsync.cadastroagendamento.application.usecases.CriarUsuarioUseCase;
+import com.medsync.cadastroagendamento.presentation.dto.AtualizarUsuarioRequest;
+import com.medsync.cadastroagendamento.presentation.dto.CriarUsuarioRequest;
 import com.medsync.cadastroagendamento.domain.entities.Telefone;
 import com.medsync.cadastroagendamento.domain.entities.Usuario;
-import com.medsync.cadastroagendamento.domain.enums.TipoTelefone;
-import com.medsync.cadastroagendamento.presentation.dto.CriarUsuarioRequest;
 import com.medsync.cadastroagendamento.presentation.dto.TelefoneResponse;
 import com.medsync.cadastroagendamento.presentation.dto.UsuarioResponse;
 import org.mapstruct.Mapper;
@@ -15,7 +14,9 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface UsuarioDtoMapper {
     
-    CriarUsuarioUseCase.CriarUsuarioRequest toUseCaseRequest(CriarUsuarioRequest dto);
+    CriarUsuarioRequest toUseCaseRequest(CriarUsuarioRequest dto);
+    
+    AtualizarUsuarioRequest toUseCaseRequest(AtualizarUsuarioRequest dto);
     
     UsuarioResponse toResponse(Usuario usuario);
     

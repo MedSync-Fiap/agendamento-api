@@ -7,14 +7,18 @@ import com.medsync.cadastroagendamento.domain.entities.Usuario;
 import com.medsync.cadastroagendamento.domain.enums.StatusConsulta;
 import com.medsync.cadastroagendamento.domain.gateways.ConsultaGateway;
 import com.medsync.cadastroagendamento.domain.gateways.UsuarioGateway;
+import com.medsync.cadastroagendamento.infrastructure.config.properties.AppProperties;
+import com.medsync.cadastroagendamento.infrastructure.config.properties.RabbitMQProperties;
+import com.medsync.cadastroagendamento.presentation.dto.CriarConsultaRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
 import java.time.LocalDateTime;
@@ -27,6 +31,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 @DisplayName("CriarConsultaUseCase Tests")
 class CriarConsultaUseCaseTest {
 
@@ -39,10 +44,22 @@ class CriarConsultaUseCaseTest {
     @Mock
     private RabbitTemplate rabbitTemplate;
 
+    @Mock
+    private AppProperties appProperties;
+
+    @Mock
+    private RabbitMQProperties rabbitmq;
+
+    @Mock
+    private ValidarConsultaUseCase validarConsultaUseCase;
+
+    @Mock
+    private PublicarEventoConsultaUseCase publicarEventoConsultaUseCase;
+
     @InjectMocks
     private CriarConsultaUseCase criarConsultaUseCase;
 
-    private CriarConsultaUseCase.CriarConsultaRequest request;
+    private CriarConsultaRequest request;
     private Usuario paciente;
     private Usuario medico;
     private Usuario criadoPor;
@@ -59,7 +76,7 @@ class CriarConsultaUseCaseTest {
         criadoPorId = UUID.randomUUID();
         dataHora = LocalDateTime.now().plusDays(1).withHour(14).withMinute(0);
 
-        request = new CriarConsultaUseCase.CriarConsultaRequest(
+        request = new CriarConsultaRequest(
                 pacienteId,
                 medicoId,
                 criadoPorId,
@@ -90,6 +107,15 @@ class CriarConsultaUseCaseTest {
         consultaSalva.setDataHora(dataHora);
         consultaSalva.setStatus(StatusConsulta.AGENDADA);
         consultaSalva.setObservacoes("Consulta de rotina");
+
+        when(appProperties.rabbitmq()).thenReturn(rabbitmq);
+        when(rabbitmq.exchangeConsultas()).thenReturn("ex_consultas");
+        when(rabbitmq.routingKeyHistorico()).thenReturn("consulta.historico");
+        when(rabbitmq.routingKeyNotificacoes()).thenReturn("consulta.notificacao");
+
+        // Configurar mocks dos use cases de validação para não lançar exceções por padrão
+        doNothing().when(validarConsultaUseCase).validarCriacaoConsulta(any());
+        doNothing().when(publicarEventoConsultaUseCase).publicarConsultaCriada(any());
     }
 
     @Test
@@ -115,28 +141,24 @@ class CriarConsultaUseCaseTest {
         assertThat(resultado.getStatus()).isEqualTo(StatusConsulta.AGENDADA);
         assertThat(resultado.getObservacoes()).isEqualTo("Consulta de rotina");
 
-        verify(usuarioGateway).buscarPorId(pacienteId);
-        verify(usuarioGateway).buscarPorId(medicoId);
-        verify(usuarioGateway).buscarPorId(criadoPorId);
-        verify(consultaGateway).existeConsultaNoHorario(medicoId, dataHora);
+        verify(validarConsultaUseCase).validarCriacaoConsulta(request);
         verify(consultaGateway).salvar(any(Consulta.class));
+        verify(publicarEventoConsultaUseCase).publicarConsultaCriada(any(Consulta.class));
     }
 
     @Test
     @DisplayName("Deve lançar UsuarioNaoEncontradoException quando paciente não existe")
     void deveLancarUsuarioNaoEncontradoExceptionQuandoPacienteNaoExiste() {
         // Given
-        when(usuarioGateway.buscarPorId(pacienteId)).thenReturn(Optional.empty());
+        doThrow(new UsuarioNaoEncontradoException(pacienteId))
+                .when(validarConsultaUseCase).validarCriacaoConsulta(any());
 
         // When & Then
         assertThatThrownBy(() -> criarConsultaUseCase.executar(request))
                 .isInstanceOf(UsuarioNaoEncontradoException.class)
                 .hasMessage("Usuário não encontrado com ID: " + pacienteId);
 
-        verify(usuarioGateway).buscarPorId(pacienteId);
-        verify(usuarioGateway, never()).buscarPorId(medicoId);
-        verify(usuarioGateway, never()).buscarPorId(criadoPorId);
-        verify(consultaGateway, never()).existeConsultaNoHorario(any(), any());
+        verify(validarConsultaUseCase).validarCriacaoConsulta(request);
         verify(consultaGateway, never()).salvar(any(Consulta.class));
     }
 
@@ -144,18 +166,15 @@ class CriarConsultaUseCaseTest {
     @DisplayName("Deve lançar UsuarioNaoEncontradoException quando médico não existe")
     void deveLancarUsuarioNaoEncontradoExceptionQuandoMedicoNaoExiste() {
         // Given
-        when(usuarioGateway.buscarPorId(pacienteId)).thenReturn(Optional.of(paciente));
-        when(usuarioGateway.buscarPorId(medicoId)).thenReturn(Optional.empty());
+        doThrow(new UsuarioNaoEncontradoException(medicoId))
+                .when(validarConsultaUseCase).validarCriacaoConsulta(any());
 
         // When & Then
         assertThatThrownBy(() -> criarConsultaUseCase.executar(request))
                 .isInstanceOf(UsuarioNaoEncontradoException.class)
                 .hasMessage("Usuário não encontrado com ID: " + medicoId);
 
-        verify(usuarioGateway).buscarPorId(pacienteId);
-        verify(usuarioGateway).buscarPorId(medicoId);
-        verify(usuarioGateway, never()).buscarPorId(criadoPorId);
-        verify(consultaGateway, never()).existeConsultaNoHorario(any(), any());
+        verify(validarConsultaUseCase).validarCriacaoConsulta(request);
         verify(consultaGateway, never()).salvar(any(Consulta.class));
     }
 
@@ -163,19 +182,15 @@ class CriarConsultaUseCaseTest {
     @DisplayName("Deve lançar UsuarioNaoEncontradoException quando usuário criador não existe")
     void deveLancarUsuarioNaoEncontradoExceptionQuandoUsuarioCriadorNaoExiste() {
         // Given
-        when(usuarioGateway.buscarPorId(pacienteId)).thenReturn(Optional.of(paciente));
-        when(usuarioGateway.buscarPorId(medicoId)).thenReturn(Optional.of(medico));
-        when(usuarioGateway.buscarPorId(criadoPorId)).thenReturn(Optional.empty());
+        doThrow(new UsuarioNaoEncontradoException(criadoPorId))
+                .when(validarConsultaUseCase).validarCriacaoConsulta(any());
 
         // When & Then
         assertThatThrownBy(() -> criarConsultaUseCase.executar(request))
                 .isInstanceOf(UsuarioNaoEncontradoException.class)
                 .hasMessage("Usuário não encontrado com ID: " + criadoPorId);
 
-        verify(usuarioGateway).buscarPorId(pacienteId);
-        verify(usuarioGateway).buscarPorId(medicoId);
-        verify(usuarioGateway).buscarPorId(criadoPorId);
-        verify(consultaGateway, never()).existeConsultaNoHorario(any(), any());
+        verify(validarConsultaUseCase).validarCriacaoConsulta(request);
         verify(consultaGateway, never()).salvar(any(Consulta.class));
     }
 
@@ -183,20 +198,15 @@ class CriarConsultaUseCaseTest {
     @DisplayName("Deve lançar ConflitoHorarioException quando já existe consulta no horário")
     void deveLancarConflitoHorarioExceptionQuandoJaExisteConsultaNoHorario() {
         // Given
-        when(usuarioGateway.buscarPorId(pacienteId)).thenReturn(Optional.of(paciente));
-        when(usuarioGateway.buscarPorId(medicoId)).thenReturn(Optional.of(medico));
-        when(usuarioGateway.buscarPorId(criadoPorId)).thenReturn(Optional.of(criadoPor));
-        when(consultaGateway.existeConsultaNoHorario(medicoId, dataHora)).thenReturn(true);
+        doThrow(new ConflitoHorarioException(medicoId, dataHora))
+                .when(validarConsultaUseCase).validarCriacaoConsulta(any());
 
         // When & Then
         assertThatThrownBy(() -> criarConsultaUseCase.executar(request))
                 .isInstanceOf(ConflitoHorarioException.class)
                 .hasMessage("Já existe uma consulta agendada para o médico " + medicoId + " no horário " + dataHora);
 
-        verify(usuarioGateway).buscarPorId(pacienteId);
-        verify(usuarioGateway).buscarPorId(medicoId);
-        verify(usuarioGateway).buscarPorId(criadoPorId);
-        verify(consultaGateway).existeConsultaNoHorario(medicoId, dataHora);
+        verify(validarConsultaUseCase).validarCriacaoConsulta(request);
         verify(consultaGateway, never()).salvar(any(Consulta.class));
     }
 
@@ -214,15 +224,7 @@ class CriarConsultaUseCaseTest {
         criarConsultaUseCase.executar(request);
 
         // Then
-        ArgumentCaptor<Object> eventCaptor = ArgumentCaptor.forClass(Object.class);
-        verify(rabbitTemplate, times(2)).convertAndSend(
-                eq("ex_consultas"),
-                anyString(),
-                eventCaptor.capture()
-        );
-
-        // Verificar que foram enviados 2 eventos (histórico e notificação)
-        assertThat(eventCaptor.getAllValues()).hasSize(2);
+        verify(publicarEventoConsultaUseCase).publicarConsultaCriada(any(Consulta.class));
     }
 
     @Test
@@ -287,8 +289,8 @@ class CriarConsultaUseCaseTest {
     @DisplayName("Deve criar consulta com observações nulas quando não fornecidas")
     void deveCriarConsultaComObservacoesNulasQuandoNaoFornecidas() {
         // Given
-        CriarConsultaUseCase.CriarConsultaRequest requestSemObservacoes = 
-                new CriarConsultaUseCase.CriarConsultaRequest(
+        CriarConsultaRequest requestSemObservacoes = 
+                new CriarConsultaRequest(
                         pacienteId,
                         medicoId,
                         criadoPorId,

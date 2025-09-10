@@ -3,6 +3,7 @@ package com.medsync.cadastroagendamento.application.usecases;
 import com.medsync.cadastroagendamento.application.exceptions.CredenciaisInvalidasException;
 import com.medsync.cadastroagendamento.domain.entities.Usuario;
 import com.medsync.cadastroagendamento.domain.gateways.UsuarioGateway;
+import com.medsync.cadastroagendamento.presentation.dto.AutenticarUsuarioRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -37,7 +38,7 @@ class AutenticarUsuarioUseCaseTest {
     private String email;
     private String senha;
     private String senhaHash;
-    private AutenticarUsuarioUseCase.AutenticarUsuarioRequest request;
+    private AutenticarUsuarioRequest request;
 
     @BeforeEach
     void setUp() {
@@ -56,7 +57,7 @@ class AutenticarUsuarioUseCaseTest {
         usuario.setCriadoEm(LocalDateTime.now().minusDays(1));
         usuario.setAtualizadoEm(LocalDateTime.now().minusDays(1));
 
-        request = new AutenticarUsuarioUseCase.AutenticarUsuarioRequest(email, senha);
+        request = new AutenticarUsuarioRequest(email, senha);
     }
 
     @Test
@@ -212,8 +213,8 @@ class AutenticarUsuarioUseCaseTest {
     void deveTratarEmailEmDiferentesFormatos() {
         // Given
         String emailMaiusculo = "JOAO@EMAIL.COM";
-        AutenticarUsuarioUseCase.AutenticarUsuarioRequest requestMaiusculo = 
-                new AutenticarUsuarioUseCase.AutenticarUsuarioRequest(emailMaiusculo, senha);
+        AutenticarUsuarioRequest requestMaiusculo = 
+                new AutenticarUsuarioRequest(emailMaiusculo, senha);
         
         when(usuarioGateway.buscarPorEmail(emailMaiusculo)).thenReturn(Optional.of(usuario));
         when(passwordEncoder.matches(senha, senhaHash)).thenReturn(true);

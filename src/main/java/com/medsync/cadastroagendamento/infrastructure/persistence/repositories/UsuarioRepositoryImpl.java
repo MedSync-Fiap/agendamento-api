@@ -64,8 +64,6 @@ public class UsuarioRepositoryImpl implements UsuarioGateway {
     
     @Override
     public List<Usuario> buscarMedicos() {
-        // Assumindo que o roleId para médicos é conhecido
-        // Em uma implementação real, você buscaria o roleId do enum TipoRole.MEDICO
         return jpaRepository.findByRoleId(UUID.fromString("550e8400-e29b-41d4-a716-446655440002"))
                 .stream()
                 .map(mapper::toDomain)
@@ -74,7 +72,6 @@ public class UsuarioRepositoryImpl implements UsuarioGateway {
     
     @Override
     public List<Usuario> buscarPacientes() {
-        // Assumindo que o roleId para pacientes é conhecido
         return jpaRepository.findByRoleId(UUID.fromString("550e8400-e29b-41d4-a716-446655440004"))
                 .stream()
                 .map(mapper::toDomain)

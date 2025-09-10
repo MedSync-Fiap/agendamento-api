@@ -18,7 +18,6 @@ public class Telefone {
         this.tipo = tipo;
     }
 
-    // Getters and Setters
     public UUID getId() {
         return id;
     }

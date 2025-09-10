@@ -26,7 +26,6 @@ public class TelefoneJpaEntity {
     @JoinColumn(name = "usuario_id", insertable = false, updatable = false)
     private UsuarioJpaEntity usuario;
     
-    // Constructors
     public TelefoneJpaEntity() {}
     
     public TelefoneJpaEntity(UUID id, UUID usuarioId, String numero, TipoTelefone tipo) {
@@ -36,7 +35,6 @@ public class TelefoneJpaEntity {
         this.tipo = tipo;
     }
     
-    // Getters and Setters
     public UUID getId() {
         return id;
     }

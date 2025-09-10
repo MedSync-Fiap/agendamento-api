@@ -20,7 +20,6 @@ public class Role {
         this.atualizadoEm = atualizadoEm;
     }
 
-    // Getters and Setters
     public UUID getId() {
         return id;
     }
@@ -61,7 +60,6 @@ public class Role {
         this.permissoes = permissoes;
     }
 
-    // Business methods
     public boolean temPermissao(String nomePermissao) {
         if (permissoes == null) {
             return false;

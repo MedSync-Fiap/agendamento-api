@@ -1,9 +1,9 @@
 package com.medsync.cadastroagendamento.infrastructure.config;
 
+import com.medsync.cadastroagendamento.infrastructure.config.properties.AppProperties;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
@@ -16,14 +16,14 @@ import java.util.function.Function;
 @Component
 public class JwtConfig {
     
-    @Value("${jwt.secret}")
-    private String secret;
+    private final AppProperties appProperties;
     
-    @Value("${jwt.expiration}")
-    private Long expiration;
+    public JwtConfig(AppProperties appProperties) {
+        this.appProperties = appProperties;
+    }
     
     private SecretKey getSigningKey() {
-        return Keys.hmacShaKeyFor(secret.getBytes());
+        return Keys.hmacShaKeyFor(appProperties.security().jwt().secret().getBytes());
     }
     
     public String generateToken(UUID userId, String email, String role) {
@@ -38,7 +38,7 @@ public class JwtConfig {
                 .claims(claims)
                 .subject(subject)
                 .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + expiration))
+                .expiration(new Date(System.currentTimeMillis() + appProperties.security().jwt().expiration()))
                 .signWith(getSigningKey())
                 .compact();
     }

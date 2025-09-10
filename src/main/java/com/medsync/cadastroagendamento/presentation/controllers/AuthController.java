@@ -1,39 +1,46 @@
 package com.medsync.cadastroagendamento.presentation.controllers;
 
-import com.medsync.cadastroagendamento.application.usecases.AutenticarUsuarioUseCase;
-import com.medsync.cadastroagendamento.infrastructure.config.JwtConfig;
+import com.medsync.cadastroagendamento.application.services.AuthService;
+import com.medsync.cadastroagendamento.presentation.dto.AutenticarUsuarioRequest;
 import com.medsync.cadastroagendamento.presentation.dto.LoginRequest;
 import com.medsync.cadastroagendamento.presentation.dto.LoginResponse;
 import com.medsync.cadastroagendamento.presentation.mappers.UsuarioDtoMapper;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/auth")
+@RequestMapping("/auth")
+@Tag(name = "Autenticação", description = "API para autenticação de usuários")
 public class AuthController {
     
-    private final AutenticarUsuarioUseCase autenticarUsuarioUseCase;
-    private final JwtConfig jwtConfig;
+    private final AuthService authService;
     private final UsuarioDtoMapper mapper;
     
-    public AuthController(AutenticarUsuarioUseCase autenticarUsuarioUseCase,
-                         JwtConfig jwtConfig,
-                         UsuarioDtoMapper mapper) {
-        this.autenticarUsuarioUseCase = autenticarUsuarioUseCase;
-        this.jwtConfig = jwtConfig;
+    public AuthController(AuthService authService, UsuarioDtoMapper mapper) {
+        this.authService = authService;
         this.mapper = mapper;
     }
     
     @PostMapping("/login")
+    @Operation(summary = "Realizar login", description = "Autentica um usuário e retorna um token JWT")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Login realizado com sucesso"),
+            @ApiResponse(responseCode = "400", description = "Dados inválidos"),
+            @ApiResponse(responseCode = "401", description = "Credenciais inválidas")
+    })
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
-        var useCaseRequest = new AutenticarUsuarioUseCase.AutenticarUsuarioRequest(
+        var useCaseRequest = new AutenticarUsuarioRequest(
             request.email(),
             request.senha()
         );
         
-        var usuario = autenticarUsuarioUseCase.executar(useCaseRequest);
-        var token = jwtConfig.generateToken(usuario.getId(), usuario.getEmail(), "USER");
+        var usuario = authService.obterUsuarioAutenticado(useCaseRequest);
+        var token = authService.autenticarUsuario(useCaseRequest);
         
         var response = new LoginResponse(
             token,

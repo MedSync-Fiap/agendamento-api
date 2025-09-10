@@ -4,6 +4,7 @@ import com.medsync.cadastroagendamento.application.exceptions.CpfJaExisteExcepti
 import com.medsync.cadastroagendamento.application.exceptions.EmailJaExisteException;
 import com.medsync.cadastroagendamento.domain.entities.Usuario;
 import com.medsync.cadastroagendamento.domain.gateways.UsuarioGateway;
+import com.medsync.cadastroagendamento.presentation.dto.CriarUsuarioRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -34,12 +35,12 @@ class CriarUsuarioUseCaseTest {
     @InjectMocks
     private CriarUsuarioUseCase criarUsuarioUseCase;
 
-    private CriarUsuarioUseCase.CriarUsuarioRequest request;
+    private CriarUsuarioRequest request;
     private Usuario usuarioSalvo;
 
     @BeforeEach
     void setUp() {
-        request = new CriarUsuarioUseCase.CriarUsuarioRequest(
+        request = new CriarUsuarioRequest(
                 "João Silva",
                 "12345678901",
                 "joao@email.com",

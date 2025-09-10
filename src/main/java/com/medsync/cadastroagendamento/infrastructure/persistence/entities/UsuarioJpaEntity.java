@@ -45,7 +45,6 @@ public class UsuarioJpaEntity {
     @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<TelefoneJpaEntity> telefones;
     
-    // Constructors
     public UsuarioJpaEntity() {}
     
     public UsuarioJpaEntity(UUID id, String nome, String cpf, String email, String senhaHash, 
@@ -61,7 +60,6 @@ public class UsuarioJpaEntity {
         this.atualizadoEm = atualizadoEm;
     }
     
-    // Getters and Setters
     public UUID getId() {
         return id;
     }

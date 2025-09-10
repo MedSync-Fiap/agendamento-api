@@ -43,7 +43,6 @@ public class ConsultaJpaEntity {
     @Column(name = "atualizado_em", nullable = false)
     private LocalDateTime atualizadoEm;
     
-    // Constructors
     public ConsultaJpaEntity() {}
     
     public ConsultaJpaEntity(UUID id, UUID pacienteId, UUID medicoId, UUID criadoPorId, 
@@ -60,7 +59,6 @@ public class ConsultaJpaEntity {
         this.atualizadoEm = atualizadoEm;
     }
     
-    // Getters and Setters
     public UUID getId() {
         return id;
     }

@@ -1,8 +1,8 @@
 package com.medsync.cadastroagendamento.presentation.mappers;
 
-import com.medsync.cadastroagendamento.application.usecases.CriarConsultaUseCase;
 import com.medsync.cadastroagendamento.domain.entities.Consulta;
 import com.medsync.cadastroagendamento.domain.enums.StatusConsulta;
+import com.medsync.cadastroagendamento.presentation.dto.AtualizarConsultaRequest;
 import com.medsync.cadastroagendamento.presentation.dto.ConsultaResponse;
 import com.medsync.cadastroagendamento.presentation.dto.CriarConsultaRequest;
 import java.time.LocalDateTime;
@@ -14,33 +14,54 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-09-09T20:03:55-0300",
+    date = "2025-09-09T22:23:07-0300",
     comments = "version: 1.5.5.Final, compiler: javac, environment: Java 21.0.6 (Amazon.com Inc.)"
 )
 @Component
 public class ConsultaDtoMapperImpl implements ConsultaDtoMapper {
 
     @Override
-    public CriarConsultaUseCase.CriarConsultaRequest toUseCaseRequest(CriarConsultaRequest dto) {
+    public CriarConsultaRequest toUseCaseRequest(CriarConsultaRequest dto) {
         if ( dto == null ) {
             return null;
         }
 
         UUID pacienteId = null;
         UUID medicoId = null;
+        UUID criadoPorId = null;
         LocalDateTime dataHora = null;
         String observacoes = null;
 
         pacienteId = dto.pacienteId();
         medicoId = dto.medicoId();
+        criadoPorId = dto.criadoPorId();
         dataHora = dto.dataHora();
         observacoes = dto.observacoes();
 
-        UUID criadoPorId = null;
-
-        CriarConsultaUseCase.CriarConsultaRequest criarConsultaRequest = new CriarConsultaUseCase.CriarConsultaRequest( pacienteId, medicoId, criadoPorId, dataHora, observacoes );
+        CriarConsultaRequest criarConsultaRequest = new CriarConsultaRequest( pacienteId, medicoId, criadoPorId, dataHora, observacoes );
 
         return criarConsultaRequest;
+    }
+
+    @Override
+    public AtualizarConsultaRequest toUseCaseRequest(AtualizarConsultaRequest dto) {
+        if ( dto == null ) {
+            return null;
+        }
+
+        UUID medicoId = null;
+        LocalDateTime dataHora = null;
+        String observacoes = null;
+        UUID editadoPorId = null;
+
+        medicoId = dto.medicoId();
+        dataHora = dto.dataHora();
+        observacoes = dto.observacoes();
+        editadoPorId = dto.editadoPorId();
+
+        AtualizarConsultaRequest atualizarConsultaRequest = new AtualizarConsultaRequest( medicoId, dataHora, observacoes, editadoPorId );
+
+        return atualizarConsultaRequest;
     }
 
     @Override
