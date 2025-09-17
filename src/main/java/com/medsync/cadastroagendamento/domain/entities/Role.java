@@ -7,15 +7,17 @@ import java.util.UUID;
 public class Role {
     private UUID id;
     private String nome;
+    private String descricao;
     private LocalDateTime criadoEm;
     private LocalDateTime atualizadoEm;
     private List<Permissao> permissoes;
 
     public Role() {}
 
-    public Role(UUID id, String nome, LocalDateTime criadoEm, LocalDateTime atualizadoEm) {
+    public Role(UUID id, String nome, String descricao, LocalDateTime criadoEm, LocalDateTime atualizadoEm) {
         this.id = id;
         this.nome = nome;
+        this.descricao = descricao;
         this.criadoEm = criadoEm;
         this.atualizadoEm = atualizadoEm;
     }
@@ -34,6 +36,14 @@ public class Role {
 
     public void setNome(String nome) {
         this.nome = nome;
+    }
+
+    public String getDescricao() {
+        return descricao;
+    }
+
+    public void setDescricao(String descricao) {
+        this.descricao = descricao;
     }
 
     public LocalDateTime getCriadoEm() {
@@ -60,23 +70,8 @@ public class Role {
         this.permissoes = permissoes;
     }
 
-    public boolean temPermissao(String nomePermissao) {
-        if (permissoes == null) {
-            return false;
-        }
-        return permissoes.stream()
-                .anyMatch(permissao -> permissao.getNome().equals(nomePermissao));
-    }
-
-    public void adicionarPermissao(Permissao permissao) {
-        if (permissoes != null && !permissoes.contains(permissao)) {
-            permissoes.add(permissao);
-        }
-    }
-
-    public void removerPermissao(Permissao permissao) {
-        if (permissoes != null) {
-            permissoes.remove(permissao);
-        }
+    public boolean hasPermission(String permissionName) {
+        return permissoes != null && permissoes.stream()
+                .anyMatch(permissao -> permissao.getNome().equals(permissionName));
     }
 }

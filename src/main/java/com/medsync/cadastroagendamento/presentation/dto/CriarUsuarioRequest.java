@@ -3,9 +3,11 @@ package com.medsync.cadastroagendamento.presentation.dto;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Past;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 public record CriarUsuarioRequest(
@@ -24,6 +26,10 @@ public record CriarUsuarioRequest(
     @NotBlank(message = "Senha é obrigatória")
     @Size(min = 6, message = "Senha deve ter pelo menos 6 caracteres")
     String senha,
+    
+    @NotNull(message = "Data de nascimento é obrigatória")
+    @Past(message = "Data de nascimento deve ser no passado")
+    LocalDate dataNascimento,
     
     @NotNull(message = "Role ID é obrigatório")
     UUID roleId

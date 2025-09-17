@@ -17,8 +17,8 @@ public class PublicarEventoNotificacaoUseCase {
     
     public void executar(Object evento) {
         rabbitTemplate.convertAndSend(
-            appProperties.rabbitmq().exchangeConsultas(), 
-            appProperties.rabbitmq().routingKeyNotificacoes(), 
+            appProperties.getRabbitmq().getExchangeConsultas(), 
+            appProperties.getRabbitmq().getRoutingKeyNotificacoes(), 
             evento
         );
     }

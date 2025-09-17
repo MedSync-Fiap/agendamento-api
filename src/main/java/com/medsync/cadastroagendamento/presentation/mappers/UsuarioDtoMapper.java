@@ -19,6 +19,7 @@ public interface UsuarioDtoMapper {
     AtualizarUsuarioRequest toUseCaseRequest(AtualizarUsuarioRequest dto);
     
     UsuarioResponse toResponse(Usuario usuario);
+
     
     List<UsuarioResponse> toResponseList(List<Usuario> usuarios);
     

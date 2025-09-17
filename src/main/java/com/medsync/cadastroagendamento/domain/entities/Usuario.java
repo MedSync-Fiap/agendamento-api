@@ -1,5 +1,6 @@
 package com.medsync.cadastroagendamento.domain.entities;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -10,7 +11,9 @@ public class Usuario {
     private String cpf;
     private String email;
     private String senhaHash;
+    private LocalDate dataNascimento;
     private UUID roleId;
+    private Role role;
     private boolean ativo;
     private LocalDateTime criadoEm;
     private LocalDateTime atualizadoEm;
@@ -19,12 +22,13 @@ public class Usuario {
     public Usuario() {}
 
     public Usuario(UUID id, String nome, String cpf, String email, String senhaHash, 
-                   UUID roleId, boolean ativo, LocalDateTime criadoEm, LocalDateTime atualizadoEm) {
+                   LocalDate dataNascimento, UUID roleId, boolean ativo, LocalDateTime criadoEm, LocalDateTime atualizadoEm) {
         this.id = id;
         this.nome = nome;
         this.cpf = cpf;
         this.email = email;
         this.senhaHash = senhaHash;
+        this.dataNascimento = dataNascimento;
         this.roleId = roleId;
         this.ativo = ativo;
         this.criadoEm = criadoEm;
@@ -71,12 +75,28 @@ public class Usuario {
         this.senhaHash = senhaHash;
     }
 
+    public LocalDate getDataNascimento() {
+        return dataNascimento;
+    }
+
+    public void setDataNascimento(LocalDate dataNascimento) {
+        this.dataNascimento = dataNascimento;
+    }
+
     public UUID getRoleId() {
         return roleId;
     }
 
     public void setRoleId(UUID roleId) {
         this.roleId = roleId;
+    }
+
+    public Role getRole() {
+        return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
     }
 
     public boolean isAtivo() {
@@ -129,25 +149,32 @@ public class Usuario {
     }
 
     public boolean isMedico() {
-        return "MEDICO".equals(getRoleNome());
+        return role != null && "MEDICO".equals(role.getNome());
     }
 
     public boolean isEnfermeiro() {
-        return "ENFERMEIRO".equals(getRoleNome());
+        return role != null && "ENFERMEIRO".equals(role.getNome());
     }
 
     public boolean isPaciente() {
-        return "PACIENTE".equals(getRoleNome());
+        return role != null && "PACIENTE".equals(role.getNome());
     }
 
     public boolean isAdmin() {
-        return "ADMIN".equals(getRoleNome());
+        return role != null && "ADMIN".equals(role.getNome());
     }
 
-    private String getRoleNome() {
-        // This would typically be resolved through a service or repository
-        // For now, we'll assume it's stored as a string in the roleId field
-        // In a real implementation, you'd have a Role entity
-        return "UNKNOWN"; // This should be resolved properly
+    public String getRoleNome() {
+        return role != null ? role.getNome() : "UNKNOWN";
+    }
+
+    public List<String> getPermissoes() {
+        return role != null && role.getPermissoes() != null 
+            ? role.getPermissoes().stream().map(Permissao::getNome).toList()
+            : List.of();
+    }
+
+    public boolean hasPermission(String permissionName) {
+        return role != null && role.hasPermission(permissionName);
     }
 }

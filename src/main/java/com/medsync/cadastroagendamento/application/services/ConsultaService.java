@@ -27,8 +27,8 @@ public class ConsultaService {
         this.consultaGateway = consultaGateway;
     }
     
-    public Consulta criarConsulta(CriarConsultaRequest request) {
-        return criarConsultaUseCase.executar(request);
+    public Consulta criarConsulta(CriarConsultaRequest request, UUID usuarioLogadoId) {
+        return criarConsultaUseCase.executar(request, usuarioLogadoId);
     }
     
     public Consulta atualizarConsulta(UUID id, AtualizarConsultaRequest request) {

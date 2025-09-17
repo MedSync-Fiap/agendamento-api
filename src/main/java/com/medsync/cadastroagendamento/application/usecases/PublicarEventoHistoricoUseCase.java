@@ -17,8 +17,8 @@ public class PublicarEventoHistoricoUseCase {
     
     public void executar(Object evento) {
         rabbitTemplate.convertAndSend(
-            appProperties.rabbitmq().exchangeConsultas(), 
-            appProperties.rabbitmq().routingKeyHistorico(), 
+            appProperties.getRabbitmq().getExchangeConsultas(), 
+            appProperties.getRabbitmq().getRoutingKeyHistorico(), 
             evento
         );
     }

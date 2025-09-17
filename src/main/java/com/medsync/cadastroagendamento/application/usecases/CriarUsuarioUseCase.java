@@ -49,6 +49,7 @@ public class CriarUsuarioUseCase {
         usuario.setCpf(request.cpf());
         usuario.setEmail(request.email());
         usuario.setSenhaHash(passwordEncoder.encode(request.senha()));
+        usuario.setDataNascimento(request.dataNascimento());
         usuario.setRoleId(request.roleId());
         usuario.setAtivo(true);
         usuario.setCriadoEm(LocalDateTime.now());

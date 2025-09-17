@@ -20,17 +20,17 @@ public class RabbitMQConfig {
     
     @Bean
     public TopicExchange exchangeConsultas() {
-        return new TopicExchange(appProperties.rabbitmq().exchangeConsultas());
+        return new TopicExchange(appProperties.getRabbitmq().getExchangeConsultas());
     }
     
     @Bean
     public Queue filaHistorico() {
-        return QueueBuilder.durable(appProperties.rabbitmq().queueHistorico()).build();
+        return QueueBuilder.durable(appProperties.getRabbitmq().getQueueHistorico()).build();
     }
     
     @Bean
     public Queue filaNotificacoes() {
-        return QueueBuilder.durable(appProperties.rabbitmq().queueNotificacoes()).build();
+        return QueueBuilder.durable(appProperties.getRabbitmq().getQueueNotificacoes()).build();
     }
     
     @Bean
@@ -38,7 +38,7 @@ public class RabbitMQConfig {
         return BindingBuilder
                 .bind(filaHistorico())
                 .to(exchangeConsultas())
-                .with(appProperties.rabbitmq().routingKeyHistorico());
+                .with(appProperties.getRabbitmq().getRoutingKeyHistorico());
     }
     
     @Bean
@@ -46,7 +46,7 @@ public class RabbitMQConfig {
         return BindingBuilder
                 .bind(filaNotificacoes())
                 .to(exchangeConsultas())
-                .with(appProperties.rabbitmq().routingKeyNotificacoes());
+                .with(appProperties.getRabbitmq().getRoutingKeyNotificacoes());
     }
     
     @Bean

@@ -23,7 +23,7 @@ public class JwtConfig {
     }
     
     private SecretKey getSigningKey() {
-        return Keys.hmacShaKeyFor(appProperties.security().jwt().secret().getBytes());
+        return Keys.hmacShaKeyFor(appProperties.getSecurity().getJwt().getSecret().getBytes());
     }
     
     public String generateToken(UUID userId, String email, String role) {
@@ -38,7 +38,7 @@ public class JwtConfig {
                 .claims(claims)
                 .subject(subject)
                 .issuedAt(new Date(System.currentTimeMillis()))
-                .expiration(new Date(System.currentTimeMillis() + appProperties.security().jwt().expiration()))
+                .expiration(new Date(System.currentTimeMillis() + appProperties.getSecurity().getJwt().getExpiration()))
                 .signWith(getSigningKey())
                 .compact();
     }
@@ -81,5 +81,9 @@ public class JwtConfig {
     private Boolean isTokenExpired(String token) {
         final Date expiration = getExpirationDateFromToken(token);
         return expiration.before(new Date());
+    }
+    
+    public Long getExpirationTime() {
+        return appProperties.getSecurity().getJwt().getExpiration();
     }
 }

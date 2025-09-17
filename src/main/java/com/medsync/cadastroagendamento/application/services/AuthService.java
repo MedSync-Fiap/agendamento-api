@@ -2,9 +2,12 @@ package com.medsync.cadastroagendamento.application.services;
 
 import com.medsync.cadastroagendamento.application.usecases.AutenticarUsuarioUseCase;
 import com.medsync.cadastroagendamento.presentation.dto.AutenticarUsuarioRequest;
+import com.medsync.cadastroagendamento.presentation.dto.AuthResponse;
 import com.medsync.cadastroagendamento.domain.entities.Usuario;
 import com.medsync.cadastroagendamento.infrastructure.config.JwtConfig;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
 
 @Service
 public class AuthService {
@@ -17,12 +20,32 @@ public class AuthService {
         this.jwtConfig = jwtConfig;
     }
     
-    public String autenticarUsuario(AutenticarUsuarioRequest request) {
+    public AuthResponse autenticarUsuario(AutenticarUsuarioRequest request) {
         Usuario usuario = autenticarUsuarioUseCase.executar(request);
-        return jwtConfig.generateToken(usuario.getId(), usuario.getEmail(), "USER");
-    }
-    
-    public Usuario obterUsuarioAutenticado(AutenticarUsuarioRequest request) {
-        return autenticarUsuarioUseCase.executar(request);
+        
+        String token = jwtConfig.generateToken(
+            usuario.getId(), 
+            usuario.getEmail(), 
+            usuario.getRoleNome()
+        );
+        
+        Long expiresIn = jwtConfig.getExpirationTime();
+        LocalDateTime expiresAt = LocalDateTime.now().plusSeconds(expiresIn / 1000);
+        
+        AuthResponse.UserInfo userInfo = new AuthResponse.UserInfo(
+            usuario.getId().toString(),
+            usuario.getNome(),
+            usuario.getEmail(),
+            usuario.getRoleNome(),
+            usuario.getPermissoes()
+        );
+        
+        return new AuthResponse(
+            token,
+            "Bearer",
+            expiresIn,
+            expiresAt,
+            userInfo
+        );
     }
 }

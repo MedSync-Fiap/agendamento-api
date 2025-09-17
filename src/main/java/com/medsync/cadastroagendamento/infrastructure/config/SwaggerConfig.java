@@ -18,9 +18,9 @@ public class SwaggerConfig {
     public OpenAPI customOpenAPI(AppProperties appProperties) {
         return new OpenAPI()
                 .info(new Info()
-                        .title(appProperties.name())
+                        .title(appProperties.getName())
                         .description("API para gerenciamento de usuários e agendamento de consultas médicas")
-                            .version(appProperties.version())
+                            .version(appProperties.getVersion())
                         .contact(new Contact()
                                 .name("MedSync Team")
                                 .email("contato@medsync.com")

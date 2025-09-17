@@ -32,8 +32,8 @@ public class ConsultaEventListener {
         eventoHistorico.put("data_hora", event.getDataHora());
         eventoHistorico.put("timestamp", event.getTimestamp());
         
-        rabbitTemplate.convertAndSend(appProperties.rabbitmq().exchangeConsultas(), 
-                                     appProperties.rabbitmq().routingKeyHistorico(), eventoHistorico);
+        rabbitTemplate.convertAndSend(appProperties.getRabbitmq().getExchangeConsultas(), 
+                                     appProperties.getRabbitmq().getRoutingKeyHistorico(), eventoHistorico);
     }
     
     @RabbitListener(queues = "q_notificacoes_consultas")
@@ -45,8 +45,8 @@ public class ConsultaEventListener {
         eventoNotificacao.put("medico_id", event.getMedicoId());
         eventoNotificacao.put("data_hora", event.getDataHora());
         
-        rabbitTemplate.convertAndSend(appProperties.rabbitmq().exchangeConsultas(), 
-                                     appProperties.rabbitmq().routingKeyNotificacoes(), eventoNotificacao);
+        rabbitTemplate.convertAndSend(appProperties.getRabbitmq().getExchangeConsultas(), 
+                                     appProperties.getRabbitmq().getRoutingKeyNotificacoes(), eventoNotificacao);
     }
     
     public void handleConsultaEditadaHistorico(ConsultaEditadaEvent event) {
@@ -59,8 +59,8 @@ public class ConsultaEventListener {
         eventoHistorico.put("alteracoes", event.getAlteracoes());
         eventoHistorico.put("timestamp", event.getTimestamp());
         
-        rabbitTemplate.convertAndSend(appProperties.rabbitmq().exchangeConsultas(), 
-                                     appProperties.rabbitmq().routingKeyHistorico(), eventoHistorico);
+        rabbitTemplate.convertAndSend(appProperties.getRabbitmq().getExchangeConsultas(), 
+                                     appProperties.getRabbitmq().getRoutingKeyHistorico(), eventoHistorico);
     }
     
     public void handleConsultaEditadaNotificacao(ConsultaEditadaEvent event) {
@@ -71,7 +71,7 @@ public class ConsultaEventListener {
         eventoNotificacao.put("medico_id", event.getMedicoId());
         eventoNotificacao.put("alteracoes", event.getAlteracoes());
         
-        rabbitTemplate.convertAndSend(appProperties.rabbitmq().exchangeConsultas(), 
-                                     appProperties.rabbitmq().routingKeyNotificacoes(), eventoNotificacao);
+        rabbitTemplate.convertAndSend(appProperties.getRabbitmq().getExchangeConsultas(), 
+                                     appProperties.getRabbitmq().getRoutingKeyNotificacoes(), eventoNotificacao);
     }
 }

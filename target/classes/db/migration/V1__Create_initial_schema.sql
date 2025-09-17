@@ -32,6 +32,7 @@ CREATE TABLE tb_usuario (
     nome VARCHAR(255) NOT NULL,
     cpf VARCHAR(11) NOT NULL UNIQUE,
     email VARCHAR(255) NOT NULL UNIQUE,
+    data_nascimento DATE NOT NULL,
     senha_hash VARCHAR(255) NOT NULL,
     role_id UUID NOT NULL,
     ativo BOOLEAN DEFAULT true,

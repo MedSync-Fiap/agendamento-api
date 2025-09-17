@@ -14,17 +14,24 @@ public class CriarConsultaUseCase {
     
     private final ConsultaGateway consultaGateway;
     private final ValidarConsultaUseCase validarConsultaUseCase;
+    private final ValidarPermissaoPacienteUseCase validarPermissaoPacienteUseCase;
     private final PublicarEventoConsultaUseCase publicarEventoConsultaUseCase;
     
     public CriarConsultaUseCase(ConsultaGateway consultaGateway,
                                 ValidarConsultaUseCase validarConsultaUseCase,
+                                ValidarPermissaoPacienteUseCase validarPermissaoPacienteUseCase,
                                 PublicarEventoConsultaUseCase publicarEventoConsultaUseCase) {
         this.consultaGateway = consultaGateway;
         this.validarConsultaUseCase = validarConsultaUseCase;
+        this.validarPermissaoPacienteUseCase = validarPermissaoPacienteUseCase;
         this.publicarEventoConsultaUseCase = publicarEventoConsultaUseCase;
     }
     
-    public Consulta executar(CriarConsultaRequest request) {
+    public Consulta executar(CriarConsultaRequest request, UUID usuarioLogadoId) {
+        // Validar permissões do usuário logado
+        validarPermissaoPacienteUseCase.validarCriacaoConsulta(request.pacienteId(), usuarioLogadoId);
+        
+        // Validar dados da consulta
         validarConsultaUseCase.validarCriacaoConsulta(request);
         
         Consulta consulta = criarConsulta(request);

@@ -38,11 +38,14 @@ public class ConsultaController {
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Consulta criada com sucesso"),
             @ApiResponse(responseCode = "400", description = "Dados inválidos"),
-            @ApiResponse(responseCode = "409", description = "Conflito de horário")
+            @ApiResponse(responseCode = "409", description = "Conflito de horário"),
+            @ApiResponse(responseCode = "403", description = "Usuário não tem permissão para criar consultas")
     })
-    public ResponseEntity<ConsultaResponse> criarConsulta(@Valid @RequestBody CriarConsultaRequest request) {
+    public ResponseEntity<ConsultaResponse> criarConsulta(
+            @Valid @RequestBody CriarConsultaRequest request,
+            @RequestHeader("X-User-Id") UUID usuarioLogadoId) {
         var useCaseRequest = mapper.toUseCaseRequest(request);
-        var consulta = consultaService.criarConsulta(useCaseRequest);
+        var consulta = consultaService.criarConsulta(useCaseRequest, usuarioLogadoId);
         var response = mapper.toResponse(consulta);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }

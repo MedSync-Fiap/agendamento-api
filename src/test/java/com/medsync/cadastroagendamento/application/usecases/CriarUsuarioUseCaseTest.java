@@ -14,6 +14,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.UUID;
 
@@ -45,6 +46,7 @@ class CriarUsuarioUseCaseTest {
                 "12345678901",
                 "joao@email.com",
                 "senha123",
+                LocalDate.of(1990, 5, 15),
                 UUID.randomUUID()
         );
 
