@@ -102,10 +102,11 @@ class AtualizarConsultaUseCaseTest {
         novoMedico.setNome("Dr. João Silva");
         novoMedico.setEmail("joao@email.com");
 
-        when(appProperties.rabbitmq()).thenReturn(rabbitmq);
-        when(rabbitmq.exchangeConsultas()).thenReturn("ex_consultas");
-        when(rabbitmq.routingKeyHistorico()).thenReturn("consulta.historico");
-        when(rabbitmq.routingKeyNotificacoes()).thenReturn("consulta.notificacao");
+        // Mock RabbitMQ properties
+        when(appProperties.getRabbitmq()).thenReturn(rabbitmq);
+        when(rabbitmq.getExchangeConsultas()).thenReturn("ex_consultas");
+        when(rabbitmq.getRoutingKeyHistorico()).thenReturn("consulta.historico");
+        when(rabbitmq.getRoutingKeyNotificacoes()).thenReturn("consulta.notificacao");
 
         // Configurar mocks dos use cases de validação para não lançar exceções por padrão
         doNothing().when(validarConsultaUseCase).validarAtualizacaoConsulta(any(), any(), any());
@@ -123,7 +124,7 @@ class AtualizarConsultaUseCaseTest {
         when(consultaGateway.salvar(any(Consulta.class))).thenReturn(consulta);
 
         // When
-        Consulta resultado = atualizarConsultaUseCase.executar(consultaId, request);
+        Consulta resultado = atualizarConsultaUseCase.executar(consultaId, request, UUID.randomUUID());
 
         // Then
         assertThat(resultado).isNotNull();
@@ -144,7 +145,7 @@ class AtualizarConsultaUseCaseTest {
         when(consultaGateway.buscarPorId(consultaId)).thenReturn(Optional.empty());
 
         // When & Then
-        assertThatThrownBy(() -> atualizarConsultaUseCase.executar(consultaId, request))
+        assertThatThrownBy(() -> atualizarConsultaUseCase.executar(consultaId, request, UUID.randomUUID()))
                 .isInstanceOf(ConsultaNaoEncontradaException.class)
                 .hasMessage("Consulta não encontrada com ID: " + consultaId);
 
@@ -162,7 +163,7 @@ class AtualizarConsultaUseCaseTest {
         when(consultaGateway.buscarPorId(consultaId)).thenReturn(Optional.of(consulta));
 
         // When & Then
-        assertThatThrownBy(() -> atualizarConsultaUseCase.executar(consultaId, request))
+        assertThatThrownBy(() -> atualizarConsultaUseCase.executar(consultaId, request, UUID.randomUUID()))
                 .isInstanceOf(ConsultaNaoPodeSerEditadaException.class)
                 .hasMessage("Consulta não pode ser editada com ID: " + consultaId);
 
@@ -180,7 +181,7 @@ class AtualizarConsultaUseCaseTest {
         when(usuarioGateway.buscarPorId(novoMedicoId)).thenReturn(Optional.empty());
 
         // When & Then
-        assertThatThrownBy(() -> atualizarConsultaUseCase.executar(consultaId, request))
+        assertThatThrownBy(() -> atualizarConsultaUseCase.executar(consultaId, request, UUID.randomUUID()))
                 .isInstanceOf(UsuarioNaoEncontradoException.class)
                 .hasMessage("Usuário não encontrado com ID: " + novoMedicoId);
 
@@ -200,7 +201,7 @@ class AtualizarConsultaUseCaseTest {
                 .when(validarConsultaUseCase).validarAtualizacaoConsulta(any(), any(), any());
 
         // When & Then
-        assertThatThrownBy(() -> atualizarConsultaUseCase.executar(consultaId, request))
+        assertThatThrownBy(() -> atualizarConsultaUseCase.executar(consultaId, request, UUID.randomUUID()))
                 .isInstanceOf(ConflitoHorarioException.class)
                 .hasMessage("Já existe uma consulta agendada para o médico " + novoMedicoId + " no horário " + novaDataHora);
 
@@ -227,7 +228,7 @@ class AtualizarConsultaUseCaseTest {
         when(consultaGateway.salvar(any(Consulta.class))).thenReturn(consulta);
 
         // When
-        Consulta resultado = atualizarConsultaUseCase.executar(consultaId, requestApenasMedico);
+        Consulta resultado = atualizarConsultaUseCase.executar(consultaId, requestApenasMedico, UUID.randomUUID());
 
         // Then
         assertThat(resultado).isNotNull();
@@ -259,7 +260,7 @@ class AtualizarConsultaUseCaseTest {
         when(consultaGateway.salvar(any(Consulta.class))).thenReturn(consulta);
 
         // When
-        Consulta resultado = atualizarConsultaUseCase.executar(consultaId, requestApenasDataHora);
+        Consulta resultado = atualizarConsultaUseCase.executar(consultaId, requestApenasDataHora, UUID.randomUUID());
 
         // Then
         assertThat(resultado).isNotNull();
@@ -288,7 +289,7 @@ class AtualizarConsultaUseCaseTest {
         when(consultaGateway.salvar(any(Consulta.class))).thenReturn(consulta);
 
         // When
-        Consulta resultado = atualizarConsultaUseCase.executar(consultaId, requestApenasObservacoes);
+        Consulta resultado = atualizarConsultaUseCase.executar(consultaId, requestApenasObservacoes, UUID.randomUUID());
 
         // Then
         assertThat(resultado).isNotNull();
@@ -313,7 +314,7 @@ class AtualizarConsultaUseCaseTest {
         when(consultaGateway.salvar(any(Consulta.class))).thenReturn(consulta);
 
         // When
-        atualizarConsultaUseCase.executar(consultaId, request);
+        atualizarConsultaUseCase.executar(consultaId, request, UUID.randomUUID());
 
         // Then
         verify(publicarEventoConsultaUseCase).publicarConsultaEditada(any(Consulta.class), any(UUID.class), any(Map.class));
@@ -335,7 +336,7 @@ class AtualizarConsultaUseCaseTest {
         when(consultaGateway.salvar(any(Consulta.class))).thenReturn(consulta);
 
         // When
-        atualizarConsultaUseCase.executar(consultaId, requestSemAlteracoes);
+        atualizarConsultaUseCase.executar(consultaId, requestSemAlteracoes, UUID.randomUUID());
 
         // Then
         verify(rabbitTemplate, never()).convertAndSend(anyString(), anyString(), (Object) any());
@@ -352,7 +353,7 @@ class AtualizarConsultaUseCaseTest {
         when(consultaGateway.salvar(any(Consulta.class))).thenReturn(consulta);
 
         // When
-        atualizarConsultaUseCase.executar(consultaId, request);
+        atualizarConsultaUseCase.executar(consultaId, request, UUID.randomUUID());
 
         // Then
         verify(consultaGateway).salvar(argThat(consultaSalva -> 

@@ -163,7 +163,7 @@ class ValidarPermissaoPacienteUseCaseTest {
         // When & Then
         assertThatThrownBy(() -> validarPermissaoPacienteUseCase.validarCriacaoConsulta(pacienteId, pacienteId))
                 .isInstanceOf(SecurityException.class)
-                .hasMessage("Pacientes não podem criar consultas");
+                .hasMessage("Usuário não tem permissão para criar consultas");
     }
 
     @Test
@@ -207,7 +207,7 @@ class ValidarPermissaoPacienteUseCaseTest {
         // When & Then
         assertThatThrownBy(() -> validarPermissaoPacienteUseCase.validarEdicaoConsulta(consultaId, pacienteId))
                 .isInstanceOf(SecurityException.class)
-                .hasMessage("Pacientes não podem editar consultas");
+                .hasMessage("Usuário não tem permissão para editar consultas");
     }
 
     @Test

@@ -4,10 +4,8 @@ import com.medsync.cadastroagendamento.domain.entities.Telefone;
 import com.medsync.cadastroagendamento.domain.entities.Usuario;
 import com.medsync.cadastroagendamento.domain.enums.TipoTelefone;
 import com.medsync.cadastroagendamento.presentation.dto.AtualizarUsuarioRequest;
-import com.medsync.cadastroagendamento.presentation.dto.CriarUsuarioRequest;
 import com.medsync.cadastroagendamento.presentation.dto.TelefoneResponse;
 import com.medsync.cadastroagendamento.presentation.dto.UsuarioResponse;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -17,36 +15,11 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-09-16T21:54:02-0300",
+    date = "2025-09-23T09:15:30-0300",
     comments = "version: 1.5.5.Final, compiler: javac, environment: Java 21.0.6 (Amazon.com Inc.)"
 )
 @Component
 public class UsuarioDtoMapperImpl implements UsuarioDtoMapper {
-
-    @Override
-    public CriarUsuarioRequest toUseCaseRequest(CriarUsuarioRequest dto) {
-        if ( dto == null ) {
-            return null;
-        }
-
-        String nome = null;
-        String cpf = null;
-        String email = null;
-        String senha = null;
-        LocalDate dataNascimento = null;
-        UUID roleId = null;
-
-        nome = dto.nome();
-        cpf = dto.cpf();
-        email = dto.email();
-        senha = dto.senha();
-        dataNascimento = dto.dataNascimento();
-        roleId = dto.roleId();
-
-        CriarUsuarioRequest criarUsuarioRequest = new CriarUsuarioRequest( nome, cpf, email, senha, dataNascimento, roleId );
-
-        return criarUsuarioRequest;
-    }
 
     @Override
     public AtualizarUsuarioRequest toUseCaseRequest(AtualizarUsuarioRequest dto) {
@@ -120,17 +93,15 @@ public class UsuarioDtoMapperImpl implements UsuarioDtoMapper {
             return null;
         }
 
-        UUID usuarioId = null;
         UUID id = null;
         String numero = null;
         TipoTelefone tipo = null;
 
-        usuarioId = telefone.getUsuarioId();
         id = telefone.getId();
         numero = telefone.getNumero();
         tipo = telefone.getTipo();
 
-        TelefoneResponse telefoneResponse = new TelefoneResponse( id, usuarioId, numero, tipo );
+        TelefoneResponse telefoneResponse = new TelefoneResponse( id, numero, tipo );
 
         return telefoneResponse;
     }

@@ -31,4 +31,10 @@ public interface UsuarioJpaRepository extends JpaRepository<UsuarioJpaEntity, UU
     
     @Query("SELECT u FROM UsuarioJpaEntity u WHERE u.ativo = true")
     List<UsuarioJpaEntity> findAllActive();
+    
+    @Query("SELECT u FROM UsuarioJpaEntity u LEFT JOIN FETCH u.telefones WHERE u.id = :id")
+    Optional<UsuarioJpaEntity> findByIdWithTelefones(@Param("id") UUID id);
+    
+    @Query("SELECT u FROM UsuarioJpaEntity u LEFT JOIN FETCH u.telefones WHERE u.email = :email")
+    Optional<UsuarioJpaEntity> findByEmailWithTelefones(@Param("email") String email);
 }

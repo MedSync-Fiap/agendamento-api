@@ -32,9 +32,9 @@ public class CriarConsultaUseCase {
         validarPermissaoPacienteUseCase.validarCriacaoConsulta(request.pacienteId(), usuarioLogadoId);
         
         // Validar dados da consulta
-        validarConsultaUseCase.validarCriacaoConsulta(request);
+        validarConsultaUseCase.validarCriacaoConsulta(request, usuarioLogadoId);
         
-        Consulta consulta = criarConsulta(request);
+        Consulta consulta = criarConsulta(request, usuarioLogadoId);
         Consulta consultaSalva = consultaGateway.salvar(consulta);
         
         publicarEventoConsultaUseCase.publicarConsultaCriada(consultaSalva);
@@ -42,12 +42,12 @@ public class CriarConsultaUseCase {
         return consultaSalva;
     }
     
-    private Consulta criarConsulta(CriarConsultaRequest request) {
+    private Consulta criarConsulta(CriarConsultaRequest request, UUID usuarioLogadoId) {
         Consulta consulta = new Consulta();
         consulta.setId(UUID.randomUUID());
         consulta.setPacienteId(request.pacienteId());
         consulta.setMedicoId(request.medicoId());
-        consulta.setCriadoPorId(request.criadoPorId());
+        consulta.setCriadoPorId(usuarioLogadoId);
         consulta.setDataHora(request.dataHora());
         consulta.setStatus(StatusConsulta.AGENDADA);
         consulta.setObservacoes(request.observacoes());

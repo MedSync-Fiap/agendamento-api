@@ -3,6 +3,9 @@ package com.medsync.cadastroagendamento.presentation.controllers;
 import com.medsync.cadastroagendamento.application.exceptions.ConsultaNaoEncontradaException;
 import com.medsync.cadastroagendamento.application.services.ConsultaService;
 import com.medsync.cadastroagendamento.domain.entities.Consulta;
+import com.medsync.cadastroagendamento.infrastructure.clients.ConsultaFeignClient;
+import com.medsync.cadastroagendamento.infrastructure.security.RequirePermission;
+import com.medsync.cadastroagendamento.infrastructure.security.SecurityUtils;
 import com.medsync.cadastroagendamento.presentation.dto.AtualizarConsultaRequest;
 import com.medsync.cadastroagendamento.presentation.dto.CriarConsultaRequest;
 import com.medsync.cadastroagendamento.presentation.dto.ConsultaResponse;
@@ -27,13 +30,16 @@ public class ConsultaController {
     
     private final ConsultaService consultaService;
     private final ConsultaDtoMapper mapper;
+    private final ConsultaFeignClient consultaFeignClient;
     
-    public ConsultaController(ConsultaService consultaService, ConsultaDtoMapper mapper) {
+    public ConsultaController(ConsultaService consultaService, ConsultaDtoMapper mapper, ConsultaFeignClient consultaFeignClient) {
         this.consultaService = consultaService;
         this.mapper = mapper;
+        this.consultaFeignClient = consultaFeignClient;
     }
     
     @PostMapping
+    @RequirePermission("CRIAR_CONSULTA")
     @Operation(summary = "Criar nova consulta", description = "Cria uma nova consulta médica no sistema")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Consulta criada com sucesso"),
@@ -42,8 +48,8 @@ public class ConsultaController {
             @ApiResponse(responseCode = "403", description = "Usuário não tem permissão para criar consultas")
     })
     public ResponseEntity<ConsultaResponse> criarConsulta(
-            @Valid @RequestBody CriarConsultaRequest request,
-            @RequestHeader("X-User-Id") UUID usuarioLogadoId) {
+            @Valid @RequestBody CriarConsultaRequest request) {
+        UUID usuarioLogadoId = SecurityUtils.getCurrentUserId();
         var useCaseRequest = mapper.toUseCaseRequest(request);
         var consulta = consultaService.criarConsulta(useCaseRequest, usuarioLogadoId);
         var response = mapper.toResponse(consulta);
@@ -51,6 +57,7 @@ public class ConsultaController {
     }
     
     @GetMapping("/{id}")
+    @RequirePermission("VISUALIZAR_CONSULTAS")
     @Operation(summary = "Buscar consulta por ID", description = "Retorna uma consulta específica pelo seu ID")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Consulta encontrada"),
@@ -58,42 +65,44 @@ public class ConsultaController {
     })
     public ResponseEntity<ConsultaResponse> buscarPorId(
             @Parameter(description = "ID da consulta") @PathVariable UUID id) {
-        var consulta = consultaService.buscarPorId(id)
-                .orElseThrow(() -> new ConsultaNaoEncontradaException(id));
-        var response = mapper.toResponse(consulta);
+        var response = consultaFeignClient.buscarConsultaPorId(id);
+        if (response == null) {
+            throw new ConsultaNaoEncontradaException(id);
+        }
         return ResponseEntity.ok(response);
     }
     
     @GetMapping
+    @RequirePermission("VISUALIZAR_CONSULTAS")
     @Operation(summary = "Listar todas as consultas", description = "Retorna todas as consultas cadastradas no sistema")
     @ApiResponse(responseCode = "200", description = "Lista de consultas retornada com sucesso")
     public ResponseEntity<List<ConsultaResponse>> buscarTodas() {
-        var consultas = consultaService.buscarTodas();
-        var response = mapper.toResponseList(consultas);
+        var response = consultaFeignClient.buscarTodasConsultas();
         return ResponseEntity.ok(response);
     }
     
     @GetMapping("/paciente/{pacienteId}")
+    @RequirePermission("VISUALIZAR_HISTORICO")
     @Operation(summary = "Buscar consultas por paciente", description = "Retorna todas as consultas de um paciente específico")
     @ApiResponse(responseCode = "200", description = "Lista de consultas do paciente retornada com sucesso")
     public ResponseEntity<List<ConsultaResponse>> buscarPorPaciente(
             @Parameter(description = "ID do paciente") @PathVariable UUID pacienteId) {
-        var consultas = consultaService.buscarPorPaciente(pacienteId);
-        var response = mapper.toResponseList(consultas);
+        var response = consultaFeignClient.buscarConsultasPorPaciente(pacienteId);
         return ResponseEntity.ok(response);
     }
     
     @GetMapping("/medico/{medicoId}")
+    @RequirePermission("VISUALIZAR_CONSULTAS")
     @Operation(summary = "Buscar consultas por médico", description = "Retorna todas as consultas de um médico específico")
     @ApiResponse(responseCode = "200", description = "Lista de consultas do médico retornada com sucesso")
     public ResponseEntity<List<ConsultaResponse>> buscarPorMedico(
             @Parameter(description = "ID do médico") @PathVariable UUID medicoId) {
-        var consultas = consultaService.buscarPorMedico(medicoId);
-        var response = mapper.toResponseList(consultas);
+        var response = consultaFeignClient.buscarConsultasPorMedico(medicoId);
         return ResponseEntity.ok(response);
     }
     
     @PutMapping("/{id}")
+    @RequirePermission("EDITAR_CONSULTA")
     @Operation(summary = "Atualizar consulta", description = "Atualiza os dados de uma consulta existente")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Consulta atualizada com sucesso"),
@@ -104,8 +113,9 @@ public class ConsultaController {
     public ResponseEntity<ConsultaResponse> atualizarConsulta(
             @Parameter(description = "ID da consulta") @PathVariable UUID id,
             @Valid @RequestBody AtualizarConsultaRequest request) {
+        UUID usuarioLogadoId = SecurityUtils.getCurrentUserId();
         var useCaseRequest = mapper.toUseCaseRequest(request);
-        var consulta = consultaService.atualizarConsulta(id, useCaseRequest);
+        var consulta = consultaService.atualizarConsulta(id, useCaseRequest, usuarioLogadoId);
         var response = mapper.toResponse(consulta);
         return ResponseEntity.ok(response);
     }

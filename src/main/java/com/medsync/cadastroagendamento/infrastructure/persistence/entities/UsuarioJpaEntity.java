@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -28,6 +29,9 @@ public class UsuarioJpaEntity {
     @Column(name = "senha_hash", nullable = false)
     private String senhaHash;
     
+    @Column(name = "data_nascimento", nullable = false)
+    private LocalDate dataNascimento;
+    
     @Column(name = "role_id", nullable = false)
     private UUID roleId;
     
@@ -42,18 +46,24 @@ public class UsuarioJpaEntity {
     @Column(name = "atualizado_em", nullable = false)
     private LocalDateTime atualizadoEm;
     
-    @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JoinColumn(name = "usuario_id")
     private List<TelefoneJpaEntity> telefones;
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "role_id", insertable = false, updatable = false)
+    private RoleJpaEntity role;
     
     public UsuarioJpaEntity() {}
     
     public UsuarioJpaEntity(UUID id, String nome, String cpf, String email, String senhaHash, 
-                           UUID roleId, boolean ativo, LocalDateTime criadoEm, LocalDateTime atualizadoEm) {
+                           LocalDate dataNascimento, UUID roleId, boolean ativo, LocalDateTime criadoEm, LocalDateTime atualizadoEm) {
         this.id = id;
         this.nome = nome;
         this.cpf = cpf;
         this.email = email;
         this.senhaHash = senhaHash;
+        this.dataNascimento = dataNascimento;
         this.roleId = roleId;
         this.ativo = ativo;
         this.criadoEm = criadoEm;
@@ -100,6 +110,14 @@ public class UsuarioJpaEntity {
         this.senhaHash = senhaHash;
     }
     
+    public LocalDate getDataNascimento() {
+        return dataNascimento;
+    }
+    
+    public void setDataNascimento(LocalDate dataNascimento) {
+        this.dataNascimento = dataNascimento;
+    }
+    
     public UUID getRoleId() {
         return roleId;
     }
@@ -138,5 +156,13 @@ public class UsuarioJpaEntity {
     
     public void setTelefones(List<TelefoneJpaEntity> telefones) {
         this.telefones = telefones;
+    }
+    
+    public RoleJpaEntity getRole() {
+        return role;
+    }
+    
+    public void setRole(RoleJpaEntity role) {
+        this.role = role;
     }
 }

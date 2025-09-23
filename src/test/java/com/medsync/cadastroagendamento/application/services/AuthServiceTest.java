@@ -63,7 +63,7 @@ class AuthServiceTest {
         Long expirationTime = 86400000L;
 
         when(autenticarUsuarioUseCase.executar(request)).thenReturn(usuario);
-        when(jwtConfig.generateToken(usuario.getId(), usuario.getEmail(), "MEDICO")).thenReturn(token);
+        when(jwtConfig.generateToken(usuario.getId(), usuario.getEmail(), "MEDICO", usuario.getPermissoes())).thenReturn(token);
         when(jwtConfig.getExpirationTime()).thenReturn(expirationTime);
 
         // When
@@ -98,7 +98,7 @@ class AuthServiceTest {
         role.setPermissoes(List.of(permissao1, permissao2));
 
         when(autenticarUsuarioUseCase.executar(request)).thenReturn(usuario);
-        when(jwtConfig.generateToken(usuario.getId(), usuario.getEmail(), "MEDICO")).thenReturn(token);
+        when(jwtConfig.generateToken(usuario.getId(), usuario.getEmail(), "MEDICO", usuario.getPermissoes())).thenReturn(token);
         when(jwtConfig.getExpirationTime()).thenReturn(expirationTime);
 
         // When

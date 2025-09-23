@@ -31,8 +31,8 @@ public class ConsultaService {
         return criarConsultaUseCase.executar(request, usuarioLogadoId);
     }
     
-    public Consulta atualizarConsulta(UUID id, AtualizarConsultaRequest request) {
-        return atualizarConsultaUseCase.executar(id, request);
+    public Consulta atualizarConsulta(UUID id, AtualizarConsultaRequest request, UUID usuarioLogadoId) {
+        return atualizarConsultaUseCase.executar(id, request, usuarioLogadoId);
     }
     
     public Optional<Consulta> buscarPorId(UUID id) {

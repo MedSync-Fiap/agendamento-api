@@ -105,9 +105,12 @@ public class GlobalExceptionHandler {
     
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGenericException(Exception ex) {
+        // Log the full stack trace for debugging
+        ex.printStackTrace();
+        
         ErrorResponse error = new ErrorResponse(
             "INTERNAL_SERVER_ERROR",
-            "Erro interno do servidor",
+            "Erro interno do servidor: " + ex.getMessage() + " - " + ex.getClass().getSimpleName(),
             LocalDateTime.now()
         );
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);

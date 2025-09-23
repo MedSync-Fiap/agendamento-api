@@ -2,6 +2,7 @@ package com.medsync.cadastroagendamento.presentation.controllers;
 
 import com.medsync.cadastroagendamento.application.exceptions.UsuarioNaoEncontradoException;
 import com.medsync.cadastroagendamento.application.services.UsuarioService;
+import com.medsync.cadastroagendamento.infrastructure.security.RequirePermission;
 import com.medsync.cadastroagendamento.presentation.dto.AtualizarUsuarioRequest;
 import com.medsync.cadastroagendamento.presentation.dto.CriarUsuarioRequest;
 import com.medsync.cadastroagendamento.presentation.dto.UsuarioResponse;
@@ -33,6 +34,7 @@ public class UsuarioController {
     }
     
     @PostMapping
+    @RequirePermission("CRIAR_USUARIO")
     @Operation(summary = "Criar novo usuário", description = "Cria um novo usuário no sistema")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Usuário criado com sucesso"),
@@ -40,13 +42,13 @@ public class UsuarioController {
             @ApiResponse(responseCode = "409", description = "Email ou CPF já existem")
     })
     public ResponseEntity<UsuarioResponse> criarUsuario(@Valid @RequestBody CriarUsuarioRequest request) {
-        var useCaseRequest = mapper.toUseCaseRequest(request);
-        var usuario = usuarioService.criarUsuario(useCaseRequest);
+        var usuario = usuarioService.criarUsuario(request);
         var response = mapper.toResponse(usuario);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
     
     @GetMapping("/{id}")
+    @RequirePermission("VISUALIZAR_USUARIOS")
     @Operation(summary = "Buscar usuário por ID", description = "Retorna um usuário específico pelo seu ID")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Usuário encontrado"),
@@ -60,6 +62,7 @@ public class UsuarioController {
     }
     
     @GetMapping
+    @RequirePermission("VISUALIZAR_USUARIOS")
     @Operation(summary = "Listar todos os usuários", description = "Retorna todos os usuários cadastrados no sistema")
     @ApiResponse(responseCode = "200", description = "Lista de usuários retornada com sucesso")
     public ResponseEntity<List<UsuarioResponse>> buscarTodos() {
@@ -69,6 +72,7 @@ public class UsuarioController {
     }
     
     @GetMapping("/medicos")
+    @RequirePermission("VISUALIZAR_USUARIOS")
     @Operation(summary = "Listar médicos", description = "Retorna todos os usuários com role de médico")
     @ApiResponse(responseCode = "200", description = "Lista de médicos retornada com sucesso")
     public ResponseEntity<List<UsuarioResponse>> buscarMedicos() {
@@ -78,6 +82,7 @@ public class UsuarioController {
     }
     
     @GetMapping("/pacientes")
+    @RequirePermission("VISUALIZAR_USUARIOS")
     @Operation(summary = "Listar pacientes", description = "Retorna todos os usuários com role de paciente")
     @ApiResponse(responseCode = "200", description = "Lista de pacientes retornada com sucesso")
     public ResponseEntity<List<UsuarioResponse>> buscarPacientes() {
@@ -87,6 +92,7 @@ public class UsuarioController {
     }
     
     @PutMapping("/{id}")
+    @RequirePermission("EDITAR_USUARIO")
     @Operation(summary = "Atualizar usuário", description = "Atualiza os dados de um usuário existente")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Usuário atualizado com sucesso"),

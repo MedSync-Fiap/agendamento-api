@@ -14,7 +14,6 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface UsuarioDtoMapper {
     
-    CriarUsuarioRequest toUseCaseRequest(CriarUsuarioRequest dto);
     
     AtualizarUsuarioRequest toUseCaseRequest(AtualizarUsuarioRequest dto);
     
@@ -23,6 +22,5 @@ public interface UsuarioDtoMapper {
     
     List<UsuarioResponse> toResponseList(List<Usuario> usuarios);
     
-    @Mapping(target = "usuarioId", source = "usuarioId")
     TelefoneResponse toTelefoneResponse(Telefone telefone);
 }

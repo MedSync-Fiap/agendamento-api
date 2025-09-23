@@ -1,0 +1,63 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:testdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
+  
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+  
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    virtual-host: /
+
+# Configurações de teste
+app:
+  services:
+    historico:
+      url: http://localhost:8081
+
+# Circuit Breaker Configuration para testes
+resilience4j:
+  circuitbreaker:
+    instances:
+      historico-service:
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 5s
+        sliding-window-size: 5
+        minimum-number-of-calls: 2
+        permitted-number-of-calls-in-half-open-state: 2
+  retry:
+    instances:
+      historico-service:
+        max-attempts: 2
+        wait-duration: 100ms
+        retry-exceptions:
+          - java.lang.Exception
+
+# Feign Configuration para testes
+feign:
+  client:
+    config:
+      default:
+        connect-timeout: 1000
+        read-timeout: 2000
+        logger-level: basic
+  hystrix:
+    enabled: false
+
+# Logging para testes
+logging:
+  level:
+    com.medsync.cadastroagendamento: DEBUG
+    org.springframework.amqp: DEBUG
+    feign: DEBUG

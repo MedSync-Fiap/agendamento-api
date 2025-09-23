@@ -57,10 +57,22 @@ app:
 
 springdoc:
   api-docs:
-    path: /api-docs
+    path: /v3/api-docs
   swagger-ui:
     path: /swagger-ui.html
     operationsSorter: method
+    enabled: true
+  show-actuator: true
+
+# Actuator Configuration
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
 
 # Logging
 logging:
@@ -98,4 +110,44 @@ spring:
   jpa:
     hibernate:
       ddl-auto: create-drop
-    show-sql: true
+    show-sql: false
+
+app:
+  services:
+    historico:
+      url: http://localhost:8081
+    consultas:
+      url: http://localhost:8082
+
+# Circuit Breaker Configuration
+resilience4j:
+  circuitbreaker:
+    instances:
+      historico-service:
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        permitted-number-of-calls-in-half-open-state: 3
+  retry:
+    instances:
+      historico-service:
+        max-attempts: 3
+        wait-duration: 1s
+        retry-exceptions:
+          - java.lang.Exception
+
+# Feign Configuration
+feign:
+  client:
+    config:
+      default:
+        connect-timeout: 5000
+        read-timeout: 10000
+        logger-level: basic
+      historico-service:
+        url: http://localhost:8081
+      consulta-service:
+        url: http://localhost:8082
+  hystrix:
+    enabled: false

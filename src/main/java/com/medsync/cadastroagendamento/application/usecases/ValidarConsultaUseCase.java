@@ -24,10 +24,10 @@ public class ValidarConsultaUseCase {
         this.validarConflitoHorarioUseCase = validarConflitoHorarioUseCase;
     }
     
-    public void validarCriacaoConsulta(CriarConsultaRequest request) {
+    public void validarCriacaoConsulta(CriarConsultaRequest request, UUID usuarioLogadoId) {
         validarPacienteUseCase.executar(request.pacienteId());
         validarMedicoUseCase.executar(request.medicoId());
-        buscarUsuarioPorIdUseCase.executar(request.criadoPorId());
+        buscarUsuarioPorIdUseCase.executar(usuarioLogadoId);
         validarConflitoHorarioUseCase.executar(request.medicoId(), request.dataHora());
     }
     

@@ -1,9 +1,12 @@
--- Create initial schema for MedSync Cadastro + Agendamento Service
+-- Enable pgcrypto extension for password hashing
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 -- Create roles table
 CREATE TABLE tb_role (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     nome VARCHAR(50) NOT NULL UNIQUE,
+    descricao VARCHAR(255),
+    tipo VARCHAR(50),
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
@@ -17,7 +20,7 @@ CREATE TABLE tb_permissao (
     atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create role-permission relationship table
+-- Create role_permission junction table
 CREATE TABLE tb_role_permissao (
     role_id UUID NOT NULL,
     permissao_id UUID NOT NULL,
@@ -29,9 +32,9 @@ CREATE TABLE tb_role_permissao (
 -- Create users table
 CREATE TABLE tb_usuario (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    nome VARCHAR(255) NOT NULL,
+    nome VARCHAR(100) NOT NULL,
     cpf VARCHAR(11) NOT NULL UNIQUE,
-    email VARCHAR(255) NOT NULL UNIQUE,
+    email VARCHAR(100) NOT NULL UNIQUE,
     data_nascimento DATE NOT NULL,
     senha_hash VARCHAR(255) NOT NULL,
     role_id UUID NOT NULL,
@@ -41,12 +44,12 @@ CREATE TABLE tb_usuario (
     FOREIGN KEY (role_id) REFERENCES tb_role(id)
 );
 
--- Create user phone table
+-- Create phone numbers table
 CREATE TABLE tb_usuario_telefone (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     usuario_id UUID NOT NULL,
     numero VARCHAR(20) NOT NULL,
-    tipo VARCHAR(20) NOT NULL CHECK (tipo IN ('CELULAR', 'FIXO', 'WHATSAPP')),
+    tipo VARCHAR(20) NOT NULL,
     FOREIGN KEY (usuario_id) REFERENCES tb_usuario(id) ON DELETE CASCADE
 );
 
@@ -59,7 +62,7 @@ CREATE TABLE tb_especialidade (
     atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create doctor-specialty relationship table
+-- Create doctor-specialty junction table
 CREATE TABLE tb_especialidade_medico (
     medico_id UUID NOT NULL,
     especialidade_id UUID NOT NULL,
@@ -73,10 +76,10 @@ CREATE TABLE tb_consulta (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     paciente_id UUID NOT NULL,
     medico_id UUID NOT NULL,
-    criado_por_id UUID NOT NULL,
     data_hora TIMESTAMP NOT NULL,
-    status VARCHAR(20) NOT NULL DEFAULT 'AGENDADA' CHECK (status IN ('AGENDADA', 'CONFIRMADA', 'CANCELADA', 'REALIZADA', 'FALTA')),
     observacoes TEXT,
+    status VARCHAR(20) NOT NULL DEFAULT 'AGENDADA',
+    criado_por_id UUID NOT NULL,
     criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (paciente_id) REFERENCES tb_usuario(id),
@@ -85,10 +88,9 @@ CREATE TABLE tb_consulta (
 );
 
 -- Create indexes for better performance
-CREATE INDEX idx_usuario_cpf ON tb_usuario(cpf);
 CREATE INDEX idx_usuario_email ON tb_usuario(email);
-CREATE INDEX idx_usuario_role ON tb_usuario(role_id);
+CREATE INDEX idx_usuario_cpf ON tb_usuario(cpf);
 CREATE INDEX idx_consulta_paciente ON tb_consulta(paciente_id);
 CREATE INDEX idx_consulta_medico ON tb_consulta(medico_id);
 CREATE INDEX idx_consulta_data_hora ON tb_consulta(data_hora);
-CREATE INDEX idx_consulta_status ON tb_consulta(status);
+CREATE INDEX idx_usuario_telefone_usuario ON tb_usuario_telefone(usuario_id);

@@ -82,7 +82,6 @@ class CriarConsultaUseCaseTest {
         request = new CriarConsultaRequest(
                 pacienteId,
                 medicoId,
-                criadoPorId,
                 dataHora,
                 "Consulta de rotina"
         );
@@ -111,13 +110,13 @@ class CriarConsultaUseCaseTest {
         consultaSalva.setStatus(StatusConsulta.AGENDADA);
         consultaSalva.setObservacoes("Consulta de rotina");
 
-        when(appProperties.rabbitmq()).thenReturn(rabbitmq);
-        when(rabbitmq.exchangeConsultas()).thenReturn("ex_consultas");
-        when(rabbitmq.routingKeyHistorico()).thenReturn("consulta.historico");
-        when(rabbitmq.routingKeyNotificacoes()).thenReturn("consulta.notificacao");
+        when(appProperties.getRabbitmq()).thenReturn(rabbitmq);
+        when(rabbitmq.getExchangeConsultas()).thenReturn("ex_consultas");
+        when(rabbitmq.getRoutingKeyHistorico()).thenReturn("consulta.historico");
+        when(rabbitmq.getRoutingKeyNotificacoes()).thenReturn("consulta.notificacao");
 
         // Configurar mocks dos use cases de validação para não lançar exceções por padrão
-        doNothing().when(validarConsultaUseCase).validarCriacaoConsulta(any());
+        doNothing().when(validarConsultaUseCase).validarCriacaoConsulta(any(), any());
         doNothing().when(validarPermissaoPacienteUseCase).validarCriacaoConsulta(any(), any());
         doNothing().when(publicarEventoConsultaUseCase).publicarConsultaCriada(any());
     }
@@ -146,7 +145,7 @@ class CriarConsultaUseCaseTest {
         assertThat(resultado.getObservacoes()).isEqualTo("Consulta de rotina");
 
         verify(validarPermissaoPacienteUseCase).validarCriacaoConsulta(pacienteId, criadoPorId);
-        verify(validarConsultaUseCase).validarCriacaoConsulta(request);
+        verify(validarConsultaUseCase).validarCriacaoConsulta(request, criadoPorId);
         verify(consultaGateway).salvar(any(Consulta.class));
         verify(publicarEventoConsultaUseCase).publicarConsultaCriada(any(Consulta.class));
     }
@@ -156,14 +155,14 @@ class CriarConsultaUseCaseTest {
     void deveLancarUsuarioNaoEncontradoExceptionQuandoPacienteNaoExiste() {
         // Given
         doThrow(new UsuarioNaoEncontradoException(pacienteId))
-                .when(validarConsultaUseCase).validarCriacaoConsulta(any());
+                .when(validarConsultaUseCase).validarCriacaoConsulta(any(), any());
 
         // When & Then
         assertThatThrownBy(() -> criarConsultaUseCase.executar(request, criadoPorId))
                 .isInstanceOf(UsuarioNaoEncontradoException.class)
                 .hasMessage("Usuário não encontrado com ID: " + pacienteId);
 
-        verify(validarConsultaUseCase).validarCriacaoConsulta(request);
+        verify(validarConsultaUseCase).validarCriacaoConsulta(request, criadoPorId);
         verify(consultaGateway, never()).salvar(any(Consulta.class));
     }
 
@@ -172,14 +171,14 @@ class CriarConsultaUseCaseTest {
     void deveLancarUsuarioNaoEncontradoExceptionQuandoMedicoNaoExiste() {
         // Given
         doThrow(new UsuarioNaoEncontradoException(medicoId))
-                .when(validarConsultaUseCase).validarCriacaoConsulta(any());
+                .when(validarConsultaUseCase).validarCriacaoConsulta(any(), any());
 
         // When & Then
         assertThatThrownBy(() -> criarConsultaUseCase.executar(request, criadoPorId))
                 .isInstanceOf(UsuarioNaoEncontradoException.class)
                 .hasMessage("Usuário não encontrado com ID: " + medicoId);
 
-        verify(validarConsultaUseCase).validarCriacaoConsulta(request);
+        verify(validarConsultaUseCase).validarCriacaoConsulta(request, criadoPorId);
         verify(consultaGateway, never()).salvar(any(Consulta.class));
     }
 
@@ -188,14 +187,14 @@ class CriarConsultaUseCaseTest {
     void deveLancarUsuarioNaoEncontradoExceptionQuandoUsuarioCriadorNaoExiste() {
         // Given
         doThrow(new UsuarioNaoEncontradoException(criadoPorId))
-                .when(validarConsultaUseCase).validarCriacaoConsulta(any());
+                .when(validarConsultaUseCase).validarCriacaoConsulta(any(), any());
 
         // When & Then
         assertThatThrownBy(() -> criarConsultaUseCase.executar(request, criadoPorId))
                 .isInstanceOf(UsuarioNaoEncontradoException.class)
                 .hasMessage("Usuário não encontrado com ID: " + criadoPorId);
 
-        verify(validarConsultaUseCase).validarCriacaoConsulta(request);
+        verify(validarConsultaUseCase).validarCriacaoConsulta(request, criadoPorId);
         verify(consultaGateway, never()).salvar(any(Consulta.class));
     }
 
@@ -204,14 +203,14 @@ class CriarConsultaUseCaseTest {
     void deveLancarConflitoHorarioExceptionQuandoJaExisteConsultaNoHorario() {
         // Given
         doThrow(new ConflitoHorarioException(medicoId, dataHora))
-                .when(validarConsultaUseCase).validarCriacaoConsulta(any());
+                .when(validarConsultaUseCase).validarCriacaoConsulta(any(), any());
 
         // When & Then
         assertThatThrownBy(() -> criarConsultaUseCase.executar(request, criadoPorId))
                 .isInstanceOf(ConflitoHorarioException.class)
                 .hasMessage("Já existe uma consulta agendada para o médico " + medicoId + " no horário " + dataHora);
 
-        verify(validarConsultaUseCase).validarCriacaoConsulta(request);
+        verify(validarConsultaUseCase).validarCriacaoConsulta(request, criadoPorId);
         verify(consultaGateway, never()).salvar(any(Consulta.class));
     }
 
@@ -226,7 +225,7 @@ class CriarConsultaUseCaseTest {
         when(consultaGateway.salvar(any(Consulta.class))).thenReturn(consultaSalva);
 
         // When
-        criarConsultaUseCase.executar(request);
+        criarConsultaUseCase.executar(request, criadoPorId);
 
         // Then
         verify(publicarEventoConsultaUseCase).publicarConsultaCriada(any(Consulta.class));
@@ -243,7 +242,7 @@ class CriarConsultaUseCaseTest {
         when(consultaGateway.salvar(any(Consulta.class))).thenReturn(consultaSalva);
 
         // When
-        criarConsultaUseCase.executar(request);
+        criarConsultaUseCase.executar(request, criadoPorId);
 
         // Then
         verify(consultaGateway).salvar(argThat(consulta -> 
@@ -262,7 +261,7 @@ class CriarConsultaUseCaseTest {
         when(consultaGateway.salvar(any(Consulta.class))).thenReturn(consultaSalva);
 
         // When
-        criarConsultaUseCase.executar(request);
+        criarConsultaUseCase.executar(request, criadoPorId);
 
         // Then
         verify(consultaGateway).salvar(argThat(consulta -> 
@@ -282,7 +281,7 @@ class CriarConsultaUseCaseTest {
         when(consultaGateway.salvar(any(Consulta.class))).thenReturn(consultaSalva);
 
         // When
-        criarConsultaUseCase.executar(request);
+        criarConsultaUseCase.executar(request, criadoPorId);
 
         // Then
         verify(consultaGateway).salvar(argThat(consulta -> 
@@ -298,7 +297,6 @@ class CriarConsultaUseCaseTest {
                 new CriarConsultaRequest(
                         pacienteId,
                         medicoId,
-                        criadoPorId,
                         dataHora,
                         null
                 );
@@ -310,7 +308,7 @@ class CriarConsultaUseCaseTest {
         when(consultaGateway.salvar(any(Consulta.class))).thenReturn(consultaSalva);
 
         // When
-        criarConsultaUseCase.executar(requestSemObservacoes);
+        criarConsultaUseCase.executar(requestSemObservacoes, criadoPorId);
 
         // Then
         verify(consultaGateway).salvar(argThat(consulta -> 

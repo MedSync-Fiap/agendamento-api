@@ -26,7 +26,8 @@ public class AuthService {
         String token = jwtConfig.generateToken(
             usuario.getId(), 
             usuario.getEmail(), 
-            usuario.getRoleNome()
+            usuario.getRoleNome(),
+            usuario.getPermissoes()
         );
         
         Long expiresIn = jwtConfig.getExpirationTime();

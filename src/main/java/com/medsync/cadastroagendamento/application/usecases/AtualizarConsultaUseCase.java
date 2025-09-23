@@ -32,7 +32,7 @@ public class AtualizarConsultaUseCase {
         this.publicarEventoConsultaUseCase = publicarEventoConsultaUseCase;
     }
     
-    public Consulta executar(UUID id, AtualizarConsultaRequest request) {
+    public Consulta executar(UUID id, AtualizarConsultaRequest request, UUID editadoPorId) {
         Consulta consulta = buscarConsulta(id);
         validarConsultaPodeSerEditada(consulta);
         

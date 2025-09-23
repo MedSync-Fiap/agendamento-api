@@ -6,7 +6,6 @@ import java.util.UUID;
 
 public record TelefoneResponse(
     UUID id,
-    UUID usuarioId,
     String numero,
     TipoTelefone tipo
 ) {}

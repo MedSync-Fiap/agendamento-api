@@ -1,28 +1,32 @@
 package com.medsync.cadastroagendamento.application.services;
 
+import com.medsync.cadastroagendamento.application.usecases.BuscarHistoricoPacienteUseCase;
 import com.medsync.cadastroagendamento.presentation.dto.HistoricoPacienteResponse;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.UUID;
 
 @Service
 public class HistoricoService {
     
-    // TODO: Implementar integração com o serviço de histórico via GraphQL
-    // Por enquanto, retorna dados mockados
+    private static final Logger logger = LoggerFactory.getLogger(HistoricoService.class);
     
-    public HistoricoPacienteResponse buscarHistoricoPaciente(UUID pacienteId) {
-        // Esta implementação será substituída por uma chamada ao serviço de histórico
-        // via GraphQL quando o serviço estiver disponível
+    private final BuscarHistoricoPacienteUseCase buscarHistoricoPacienteUseCase;
+    
+    public HistoricoService(BuscarHistoricoPacienteUseCase buscarHistoricoPacienteUseCase) {
+        this.buscarHistoricoPacienteUseCase = buscarHistoricoPacienteUseCase;
+    }
+    
+    public HistoricoPacienteResponse buscarHistoricoPaciente(UUID pacienteId, UUID usuarioLogadoId) {
+        logger.info("Service: Buscando histórico do paciente: {} pelo usuário: {}", pacienteId, usuarioLogadoId);
         
-        return new HistoricoPacienteResponse(
-            pacienteId,
-            "Paciente Mock",
-            "12345678901",
-            "paciente@email.com",
-            List.of() // Lista vazia de consultas por enquanto
-        );
+        // TODO: Implementar validações de negócio se necessário
+        // - Verificar se o usuário tem permissão para acessar o histórico
+        // - Validar se o paciente existe
+        // - Aplicar regras de negócio específicas
+        
+        return buscarHistoricoPacienteUseCase.executar(pacienteId, usuarioLogadoId);
     }
 }
-

@@ -1,0 +1,1067 @@
+{
+	"info": {
+		"_postman_id": "medsync-api-collection",
+		"name": "MedSync API - Cadastro e Agendamento",
+		"description": "Coleção completa de testes para a API MedSync - Sistema de Cadastro e Agendamento de Consultas Médicas",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1️⃣ Setup e Preparação",
+			"item": [
+				{
+					"name": "Health Check",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Application is running', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('status', 'UP');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/actuator/health",
+							"host": ["{{base_url}}"],
+							"path": ["actuator", "health"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "2️⃣ Criação de Usuários",
+			"item": [
+				{
+					"name": "Criar Usuário Paciente",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 201', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('Response has user data', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('id');",
+									"    pm.expect(jsonData).to.have.property('nome', 'Paciente Teste');",
+									"    pm.expect(jsonData).to.have.property('email', 'paciente.teste@medsync.com');",
+									"    ",
+									"    // Salvar ID do paciente criado",
+									"    pm.environment.set('test_paciente_id', jsonData.id);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"nome\": \"Paciente Teste\",\n    \"email\": \"paciente.teste@medsync.com\",\n    \"senha\": \"123456\",\n    \"cpf\": \"11111111111\",\n    \"dataNascimento\": \"1990-01-01\",\n    \"roleId\": \"{{role_paciente_id}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/usuarios",
+							"host": ["{{base_url}}"],
+							"path": ["usuarios"]
+						}
+					}
+				},
+				{
+					"name": "Criar Usuário Médico",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 201', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('Response has user data', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('id');",
+									"    pm.expect(jsonData).to.have.property('nome', 'Médico Teste');",
+									"    pm.expect(jsonData).to.have.property('email', 'medico.teste@medsync.com');",
+									"    ",
+									"    // Salvar ID do médico criado",
+									"    pm.environment.set('test_medico_id', jsonData.id);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"nome\": \"Médico Teste\",\n    \"email\": \"medico.teste@medsync.com\",\n    \"senha\": \"123456\",\n    \"cpf\": \"22222222222\",\n    \"dataNascimento\": \"1985-05-15\",\n    \"roleId\": \"{{role_medico_id}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/usuarios",
+							"host": ["{{base_url}}"],
+							"path": ["usuarios"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "3️⃣ Autenticação",
+			"item": [
+				{
+					"name": "Login Admin - Sucesso",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has access token', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('accessToken');",
+									"    pm.expect(jsonData).to.have.property('tokenType', 'Bearer');",
+									"    pm.expect(jsonData).to.have.property('user');",
+									"    ",
+									"    // Verificar se é admin",
+									"    pm.expect(jsonData.user.role).to.equal('ADMIN');",
+									"    pm.expect(jsonData.user.permissions).to.be.an('array');",
+									"    ",
+									"    // Salvar token admin para uso em outras requisições",
+									"    pm.environment.set('admin_token', jsonData.accessToken);",
+									"    pm.environment.set('admin_user_id', jsonData.user.id);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"{{admin_email}}\",\n    \"senha\": \"{{admin_password}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "login"]
+						}
+					}
+				},
+				{
+					"name": "Login Médico - Sucesso",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has access token', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('accessToken');",
+									"    pm.expect(jsonData).to.have.property('tokenType', 'Bearer');",
+									"    pm.expect(jsonData).to.have.property('user');",
+									"    ",
+									"    // Verificar se é médico",
+									"    pm.expect(jsonData.user.role).to.equal('MEDICO');",
+									"    pm.expect(jsonData.user.permissions).to.be.an('array');",
+									"    ",
+									"    // Salvar token médico",
+									"    pm.environment.set('medico_token', jsonData.accessToken);",
+									"    pm.environment.set('medico_user_id', jsonData.user.id);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"{{medico_email}}\",\n    \"senha\": \"{{medico_password}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "login"]
+						}
+					}
+				},
+				{
+					"name": "Login Paciente - Sucesso",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has access token', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('accessToken');",
+									"    pm.expect(jsonData).to.have.property('tokenType', 'Bearer');",
+									"    pm.expect(jsonData).to.have.property('user');",
+									"    ",
+									"    // Verificar se é paciente",
+									"    pm.expect(jsonData.user.role).to.equal('PACIENTE');",
+									"    pm.expect(jsonData.user.permissions).to.be.an('array');",
+									"    ",
+									"    // Salvar token paciente",
+									"    pm.environment.set('paciente_token', jsonData.accessToken);",
+									"    pm.environment.set('paciente_user_id', jsonData.user.id);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"{{paciente_email}}\",\n    \"senha\": \"{{paciente_password}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "login"]
+						}
+					}
+				},
+				{
+					"name": "Login Enfermeiro - Sucesso",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has access token', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('accessToken');",
+									"    pm.expect(jsonData).to.have.property('tokenType', 'Bearer');",
+									"    pm.expect(jsonData).to.have.property('user');",
+									"    ",
+									"    // Verificar se é enfermeiro",
+									"    pm.expect(jsonData.user.role).to.equal('ENFERMEIRO');",
+									"    pm.expect(jsonData.user.permissions).to.be.an('array');",
+									"    ",
+									"    // Salvar token enfermeiro",
+									"    pm.environment.set('enfermeiro_token', jsonData.accessToken);",
+									"    pm.environment.set('enfermeiro_user_id', jsonData.user.id);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"{{enfermeiro_email}}\",\n    \"senha\": \"{{enfermeiro_password}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "login"]
+						}
+					}
+				},
+				{
+					"name": "Login - Credenciais Inválidas",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 401', function () {",
+									"    pm.response.to.have.status(401);",
+									"});",
+									"",
+									"pm.test('Response has error message', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('code', 'CREDENCIAIS_INVALIDAS');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"admin@medsync.com\",\n    \"senha\": \"senha_errada\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["auth", "login"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "4️⃣ Gestão de Usuários (Admin)",
+			"item": [
+				{
+					"name": "Listar Todos os Usuários",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response is an array', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an('array');",
+									"    pm.expect(jsonData.length).to.be.greaterThan(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [{"key": "Authorization", "value": "Bearer {{admin_token}}"}],
+						"url": {
+							"raw": "{{base_url}}/usuarios",
+							"host": ["{{base_url}}"],
+							"path": ["usuarios"]
+						}
+					}
+				},
+				{
+					"name": "Buscar Usuário por ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has user data', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('id');",
+									"    pm.expect(jsonData).to.have.property('nome');",
+									"    pm.expect(jsonData).to.have.property('email');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [{"key": "Authorization", "value": "Bearer {{admin_token}}"}],
+						"url": {
+							"raw": "{{base_url}}/usuarios/{{test_paciente_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["usuarios", "{{test_paciente_id}}"]
+						}
+					}
+				},
+				{
+					"name": "Listar Médicos",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response is an array', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an('array');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [{"key": "Authorization", "value": "Bearer {{admin_token}}"}],
+						"url": {
+							"raw": "{{base_url}}/usuarios/medicos",
+							"host": ["{{base_url}}"],
+							"path": ["usuarios", "medicos"]
+						}
+					}
+				},
+				{
+					"name": "Listar Pacientes",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response is an array', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an('array');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [{"key": "Authorization", "value": "Bearer {{admin_token}}"}],
+						"url": {
+							"raw": "{{base_url}}/usuarios/pacientes",
+							"host": ["{{base_url}}"],
+							"path": ["usuarios", "pacientes"]
+						}
+					}
+				},
+				{
+					"name": "Atualizar Usuário",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has updated user data', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('id');",
+									"    pm.expect(jsonData).to.have.property('nome', 'Paciente Teste Atualizado');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{"key": "Authorization", "value": "Bearer {{admin_token}}"},
+							{"key": "Content-Type", "value": "application/json"}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"nome\": \"Paciente Teste Atualizado\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/usuarios/{{test_paciente_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["usuarios", "{{test_paciente_id}}"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "5️⃣ Gestão de Consultas (Médico)",
+			"item": [
+				{
+					"name": "Criar Consulta - Sucesso",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 201', function () {",
+									"    pm.response.to.have.status(201);",
+									"});",
+									"",
+									"pm.test('Response has consulta data', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('id');",
+									"    pm.expect(jsonData).to.have.property('pacienteId');",
+									"    pm.expect(jsonData).to.have.property('medicoId');",
+									"    pm.expect(jsonData).to.have.property('status', 'AGENDADA');",
+									"    ",
+									"    // Salvar ID da consulta criada",
+									"    pm.environment.set('created_consulta_id', jsonData.id);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{"key": "Authorization", "value": "Bearer {{medico_token}}"},
+							{"key": "Content-Type", "value": "application/json"}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"pacienteId\": \"{{test_paciente_id}}\",\n    \"medicoId\": \"{{test_medico_id}}\",\n    \"dataHora\": \"2025-12-25T10:00:00\",\n    \"observacoes\": \"Consulta de teste via Postman\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/consultas",
+							"host": ["{{base_url}}"],
+							"path": ["consultas"]
+						}
+					}
+				},
+				{
+					"name": "Listar Todas as Consultas",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response is an array', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an('array');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [{"key": "Authorization", "value": "Bearer {{medico_token}}"}],
+						"url": {
+							"raw": "{{base_url}}/consultas",
+							"host": ["{{base_url}}"],
+							"path": ["consultas"]
+						}
+					}
+				},
+				{
+					"name": "Buscar Consulta por ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has consulta data', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('id');",
+									"    pm.expect(jsonData).to.have.property('pacienteId');",
+									"    pm.expect(jsonData).to.have.property('medicoId');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [{"key": "Authorization", "value": "Bearer {{medico_token}}"}],
+						"url": {
+							"raw": "{{base_url}}/consultas/{{created_consulta_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["consultas", "{{created_consulta_id}}"]
+						}
+					}
+				},
+				{
+					"name": "Buscar Consultas por Paciente",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response is an array', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an('array');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [{"key": "Authorization", "value": "Bearer {{medico_token}}"}],
+						"url": {
+							"raw": "{{base_url}}/consultas/paciente/{{test_paciente_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["consultas", "paciente", "{{test_paciente_id}}"]
+						}
+					}
+				},
+				{
+					"name": "Buscar Consultas por Médico",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response is an array', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.be.an('array');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [{"key": "Authorization", "value": "Bearer {{medico_token}}"}],
+						"url": {
+							"raw": "{{base_url}}/consultas/medico/{{test_medico_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["consultas", "medico", "{{test_medico_id}}"]
+						}
+					}
+				},
+				{
+					"name": "Atualizar Consulta",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has updated consulta data', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('id');",
+									"    pm.expect(jsonData).to.have.property('observacoes', 'Observações atualizadas');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "PUT",
+						"header": [
+							{"key": "Authorization", "value": "Bearer {{medico_token}}"},
+							{"key": "Content-Type", "value": "application/json"}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"observacoes\": \"Observações atualizadas\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/consultas/{{created_consulta_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["consultas", "{{created_consulta_id}}"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "6️⃣ Histórico Médico",
+			"item": [
+				{
+					"name": "Buscar Histórico de Paciente (Admin)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 200', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test('Response has historico data', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('pacienteId');",
+									"    pm.expect(jsonData).to.have.property('consultas');",
+									"    pm.expect(jsonData.consultas).to.be.an('array');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [{"key": "Authorization", "value": "Bearer {{admin_token}}"}],
+						"url": {
+							"raw": "{{base_url}}/historico/paciente/{{test_paciente_id}}",
+							"host": ["{{base_url}}"],
+							"path": ["historico", "paciente", "{{test_paciente_id}}"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "7️⃣ Testes de Validação e Erro",
+			"item": [
+				{
+					"name": "Criar Usuário - Dados Inválidos",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 400', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('Response has validation errors', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('code', 'VALIDATION_ERROR');",
+									"    pm.expect(jsonData).to.have.property('errors');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"nome\": \"T\",\n    \"email\": \"email_invalido\",\n    \"senha\": \"123\",\n    \"cpf\": \"123\",\n    \"dataNascimento\": \"2030-01-01\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/usuarios",
+							"host": ["{{base_url}}"],
+							"path": ["usuarios"]
+						}
+					}
+				},
+				{
+					"name": "Criar Usuário - Email Já Existe",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 409', function () {",
+									"    pm.response.to.have.status(409);",
+									"});",
+									"",
+									"pm.test('Response has conflict error', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('code', 'EMAIL_JA_EXISTE');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"nome\": \"Teste Usuário 2\",\n    \"email\": \"paciente.teste@medsync.com\",\n    \"senha\": \"123456\",\n    \"cpf\": \"33333333333\",\n    \"dataNascimento\": \"1990-01-01\",\n    \"roleId\": \"{{role_paciente_id}}\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/usuarios",
+							"host": ["{{base_url}}"],
+							"path": ["usuarios"]
+						}
+					}
+				},
+				{
+					"name": "Criar Consulta - Dados Inválidos",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 400', function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test('Response has validation errors', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('code', 'VALIDATION_ERROR');",
+									"    pm.expect(jsonData).to.have.property('errors');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{"key": "Authorization", "value": "Bearer {{medico_token}}"},
+							{"key": "Content-Type", "value": "application/json"}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"pacienteId\": \"\",\n    \"medicoId\": \"\",\n    \"dataHora\": \"2020-01-01T10:00:00\",\n    \"observacoes\": \"Data no passado\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/consultas",
+							"host": ["{{base_url}}"],
+							"path": ["consultas"]
+						}
+					}
+				},
+				{
+					"name": "Buscar Usuário - Não Encontrado",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 404', function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"",
+									"pm.test('Response has not found error', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('code', 'USUARIO_NAO_ENCONTRADO');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [{"key": "Authorization", "value": "Bearer {{admin_token}}"}],
+						"url": {
+							"raw": "{{base_url}}/usuarios/00000000-0000-0000-0000-000000000000",
+							"host": ["{{base_url}}"],
+							"path": ["usuarios", "00000000-0000-0000-0000-000000000000"]
+						}
+					}
+				},
+				{
+					"name": "Buscar Consulta - Não Encontrada",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 404', function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"",
+									"pm.test('Response has not found error', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('code', 'CONSULTA_NAO_ENCONTRADA');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [{"key": "Authorization", "value": "Bearer {{medico_token}}"}],
+						"url": {
+							"raw": "{{base_url}}/consultas/00000000-0000-0000-0000-000000000000",
+							"host": ["{{base_url}}"],
+							"path": ["consultas", "00000000-0000-0000-0000-000000000000"]
+						}
+					}
+				}
+			]
+		},
+		{
+			"name": "8️⃣ Testes de Segurança",
+			"item": [
+				{
+					"name": "Acesso sem Token - Usuários",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 403', function () {",
+									"    pm.response.to.have.status(403);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/usuarios",
+							"host": ["{{base_url}}"],
+							"path": ["usuarios"]
+						}
+					}
+				},
+				{
+					"name": "Acesso sem Token - Consultas",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 403', function () {",
+									"    pm.response.to.have.status(403);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/consultas",
+							"host": ["{{base_url}}"],
+							"path": ["consultas"]
+						}
+					}
+				},
+				{
+					"name": "Token Inválido",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 403', function () {",
+									"    pm.response.to.have.status(403);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [{"key": "Authorization", "value": "Bearer token_invalido"}],
+						"url": {
+							"raw": "{{base_url}}/usuarios",
+							"host": ["{{base_url}}"],
+							"path": ["usuarios"]
+						}
+					}
+				},
+				{
+					"name": "Paciente Tentando Criar Consulta",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test('Status code is 500', function () {",
+									"    pm.response.to.have.status(500);",
+									"});",
+									"",
+									"pm.test('Response has permission error', function () {",
+									"    const jsonData = pm.response.json();",
+									"    pm.expect(jsonData).to.have.property('code', 'INTERNAL_SERVER_ERROR');",
+									"    pm.expect(jsonData.message).to.include('permissão');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{"key": "Authorization", "value": "Bearer {{paciente_token}}"},
+							{"key": "Content-Type", "value": "application/json"}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"pacienteId\": \"{{test_paciente_id}}\",\n    \"medicoId\": \"{{test_medico_id}}\",\n    \"dataHora\": \"2025-12-26T10:00:00\",\n    \"observacoes\": \"Paciente tentando criar consulta\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/consultas",
+							"host": ["{{base_url}}"],
+							"path": ["consultas"]
+						}
+					}
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [""]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [""]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8080",
+			"type": "string"
+		}
+	]
+}

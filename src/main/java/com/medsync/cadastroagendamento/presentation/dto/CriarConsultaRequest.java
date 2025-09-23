@@ -13,9 +13,6 @@ public record CriarConsultaRequest(
     @NotNull(message = "ID do médico é obrigatório")
     UUID medicoId,
     
-    @NotNull(message = "ID do usuário criador é obrigatório")
-    UUID criadoPorId,
-    
     @NotNull(message = "Data e hora são obrigatórias")
     @Future(message = "Data e hora devem ser no futuro")
     LocalDateTime dataHora,

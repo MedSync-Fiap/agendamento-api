@@ -12,8 +12,11 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Component
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -37,13 +40,27 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 String email = jwtConfig.getUsernameFromToken(token);
                 UUID userId = jwtConfig.getUserIdFromToken(token);
                 String role = jwtConfig.getRoleFromToken(token);
+                List<String> permissions = jwtConfig.getPermissionsFromToken(token);
                 
                 if (email != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+                    // Criar authorities baseadas no role e nas permissões
+                    List<SimpleGrantedAuthority> authorities = new ArrayList<>();
+                    
+                    // Adicionar permissões se existirem
+                    if (permissions != null) {
+                        authorities.addAll(permissions.stream()
+                            .map(permission -> new SimpleGrantedAuthority("PERMISSION_" + permission))
+                            .collect(Collectors.toList()));
+                    }
+                    
+                    // Adicionar role como authority
+                    authorities.add(new SimpleGrantedAuthority("ROLE_" + role));
+                    
                     UsernamePasswordAuthenticationToken authToken = 
                         new UsernamePasswordAuthenticationToken(
                             email, 
                             null, 
-                            Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role))
+                            authorities
                         );
                     
                     authToken.setDetails(userId);

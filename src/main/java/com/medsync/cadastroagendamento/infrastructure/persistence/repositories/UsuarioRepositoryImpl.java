@@ -4,6 +4,7 @@ import com.medsync.cadastroagendamento.domain.entities.Usuario;
 import com.medsync.cadastroagendamento.domain.gateways.UsuarioGateway;
 import com.medsync.cadastroagendamento.infrastructure.persistence.entities.UsuarioJpaEntity;
 import com.medsync.cadastroagendamento.infrastructure.persistence.mappers.UsuarioMapper;
+import com.medsync.cadastroagendamento.infrastructure.persistence.repositories.RoleJpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -15,10 +16,12 @@ public class UsuarioRepositoryImpl implements UsuarioGateway {
     
     private final UsuarioJpaRepository jpaRepository;
     private final UsuarioMapper mapper;
+    private final RoleJpaRepository roleJpaRepository;
     
-    public UsuarioRepositoryImpl(UsuarioJpaRepository jpaRepository, UsuarioMapper mapper) {
+    public UsuarioRepositoryImpl(UsuarioJpaRepository jpaRepository, UsuarioMapper mapper, RoleJpaRepository roleJpaRepository) {
         this.jpaRepository = jpaRepository;
         this.mapper = mapper;
+        this.roleJpaRepository = roleJpaRepository;
     }
     
     @Override
@@ -30,14 +33,28 @@ public class UsuarioRepositoryImpl implements UsuarioGateway {
     
     @Override
     public Optional<Usuario> buscarPorId(UUID id) {
-        return jpaRepository.findById(id)
-                .map(mapper::toDomain);
+        return jpaRepository.findByIdWithTelefones(id)
+                .map(jpaEntity -> {
+                    // Carregar role com permissões
+                    if (jpaEntity.getRoleId() != null) {
+                        roleJpaRepository.findByIdWithPermissions(jpaEntity.getRoleId())
+                                .ifPresent(jpaEntity::setRole);
+                    }
+                    return mapper.toDomain(jpaEntity);
+                });
     }
     
     @Override
     public Optional<Usuario> buscarPorEmail(String email) {
-        return jpaRepository.findByEmail(email)
-                .map(mapper::toDomain);
+        return jpaRepository.findByEmailWithTelefones(email)
+                .map(jpaEntity -> {
+                    // Carregar role com permissões
+                    if (jpaEntity.getRoleId() != null) {
+                        roleJpaRepository.findByIdWithPermissions(jpaEntity.getRoleId())
+                                .ifPresent(jpaEntity::setRole);
+                    }
+                    return mapper.toDomain(jpaEntity);
+                });
     }
     
     @Override

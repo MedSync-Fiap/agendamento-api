@@ -1,5 +1,6 @@
 package com.medsync.cadastroagendamento.domain.entities;
 
+import com.medsync.cadastroagendamento.domain.enums.TipoRole;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -8,6 +9,7 @@ public class Role {
     private UUID id;
     private String nome;
     private String descricao;
+    private TipoRole tipo;
     private LocalDateTime criadoEm;
     private LocalDateTime atualizadoEm;
     private List<Permissao> permissoes;
@@ -44,6 +46,14 @@ public class Role {
 
     public void setDescricao(String descricao) {
         this.descricao = descricao;
+    }
+
+    public TipoRole getTipo() {
+        return tipo;
+    }
+
+    public void setTipo(TipoRole tipo) {
+        this.tipo = tipo;
     }
 
     public LocalDateTime getCriadoEm() {
