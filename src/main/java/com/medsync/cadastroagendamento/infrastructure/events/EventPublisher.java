@@ -3,6 +3,7 @@ package com.medsync.cadastroagendamento.infrastructure.events;
 import com.medsync.cadastroagendamento.domain.events.ConsultaHistoricoEvent;
 import com.medsync.cadastroagendamento.domain.events.ConsultaNotificacaoEvent;
 import com.medsync.cadastroagendamento.infrastructure.config.properties.AppProperties;
+import com.medsync.cadastroagendamento.infrastructure.events.dto.NotificacaoConsultaPayload;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
@@ -25,10 +26,22 @@ public class EventPublisher {
         try {
             logger.info("Publicando evento de notificação de consulta: {}", event.consultaId());
             
+            NotificacaoConsultaPayload payload = new NotificacaoConsultaPayload(
+                event.consultaId(),
+                event.pacienteId(),
+                event.medicoId(),
+                event.criadoPorId(),
+                event.dataHora(),
+                event.status(),
+                event.observacoes(),
+                event.tipoEvento(),
+                event.timestamp()
+            );
+            
             rabbitTemplate.convertAndSend(
                 appProperties.getRabbitmq().getExchangeConsultas(),
                 appProperties.getRabbitmq().getRoutingKeyNotificacoes(),
-                event
+                payload
             );
             
             logger.info("Evento de notificação publicado com sucesso");

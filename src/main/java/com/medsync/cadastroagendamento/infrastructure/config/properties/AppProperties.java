@@ -11,6 +11,7 @@ public class AppProperties {
     private String version = "1.0.0";
     private SecurityProperties security = new SecurityProperties();
     private RabbitMQProperties rabbitmq = new RabbitMQProperties();
+    private NotificacaoProperties notificacao = new NotificacaoProperties();
     
     public AppProperties() {
     }
@@ -45,5 +46,13 @@ public class AppProperties {
     
     public void setRabbitmq(RabbitMQProperties rabbitmq) {
         this.rabbitmq = rabbitmq;
+    }
+    
+    public NotificacaoProperties getNotificacao() {
+        return notificacao;
+    }
+    
+    public void setNotificacao(NotificacaoProperties notificacao) {
+        this.notificacao = notificacao;
     }
 }

@@ -1,5 +1,7 @@
 package com.medsync.cadastroagendamento.infrastructure.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.medsync.cadastroagendamento.infrastructure.config.properties.AppProperties;
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
@@ -51,8 +53,15 @@ public class RabbitMQConfig {
     
     @Bean
     public MessageConverter messageConverter() {
-        return new Jackson2JsonMessageConverter();
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule());
+        objectMapper.disable(com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        
+        Jackson2JsonMessageConverter converter = new Jackson2JsonMessageConverter(objectMapper);
+        converter.setCreateMessageIds(true);
+        return converter;
     }
+    
     
     @Bean
     public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory) {

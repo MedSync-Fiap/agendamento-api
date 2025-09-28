@@ -68,7 +68,7 @@ public class AtualizarConsultaUseCase {
         Consulta consultaAtualizada = consultaGateway.salvar(consulta);
         
         if (!alteracoes.isEmpty()) {
-            publicarEventoConsultaUseCase.publicarConsultaEditada(consultaAtualizada, request.editadoPorId(), alteracoes);
+            publicarEventoConsultaUseCase.publicarConsultaEditada(consultaAtualizada, request.editadoPorId());
         }
         
         return consultaAtualizada;
