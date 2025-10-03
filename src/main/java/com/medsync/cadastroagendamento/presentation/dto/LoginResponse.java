@@ -1,7 +1,11 @@
 package com.medsync.cadastroagendamento.presentation.dto;
 
+import java.util.UUID;
+
 public record LoginResponse(
     String token,
-    String tipo,
-    UsuarioResponse usuario
+    UUID usuarioId,
+    String nome,
+    String email,
+    String role
 ) {}

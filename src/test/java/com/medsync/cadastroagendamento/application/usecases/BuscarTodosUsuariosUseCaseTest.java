@@ -1,6 +1,8 @@
 package com.medsync.cadastroagendamento.application.usecases;
 
+import com.medsync.cadastroagendamento.domain.entities.Role;
 import com.medsync.cadastroagendamento.domain.entities.Usuario;
+import com.medsync.cadastroagendamento.domain.enums.TipoRole;
 import com.medsync.cadastroagendamento.domain.gateways.UsuarioGateway;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -32,13 +34,27 @@ class BuscarTodosUsuariosUseCaseTest {
 
     @BeforeEach
     void setUp() {
+        Role role1 = new Role();
+        role1.setId(UUID.randomUUID());
+        role1.setTipo(TipoRole.MEDICO);
+        role1.setDescricao("Médico");
+        role1.setCriadoEm(LocalDateTime.now().minusDays(1));
+        role1.setAtualizadoEm(LocalDateTime.now().minusDays(1));
+
+        Role role2 = new Role();
+        role2.setId(UUID.randomUUID());
+        role2.setTipo(TipoRole.PACIENTE);
+        role2.setDescricao("Paciente");
+        role2.setCriadoEm(LocalDateTime.now().minusDays(2));
+        role2.setAtualizadoEm(LocalDateTime.now().minusDays(2));
+
         Usuario usuario1 = new Usuario();
         usuario1.setId(UUID.randomUUID());
         usuario1.setNome("João Silva");
         usuario1.setCpf("12345678901");
         usuario1.setEmail("joao@email.com");
         usuario1.setSenhaHash("senha_hash");
-        usuario1.setRoleId(UUID.randomUUID());
+        usuario1.setRole(role1);
         usuario1.setAtivo(true);
         usuario1.setCriadoEm(LocalDateTime.now().minusDays(1));
         usuario1.setAtualizadoEm(LocalDateTime.now().minusDays(1));
@@ -49,7 +65,7 @@ class BuscarTodosUsuariosUseCaseTest {
         usuario2.setCpf("98765432109");
         usuario2.setEmail("maria@email.com");
         usuario2.setSenhaHash("senha_hash");
-        usuario2.setRoleId(UUID.randomUUID());
+        usuario2.setRole(role2);
         usuario2.setAtivo(true);
         usuario2.setCriadoEm(LocalDateTime.now().minusDays(2));
         usuario2.setAtualizadoEm(LocalDateTime.now().minusDays(2));

@@ -1,7 +1,9 @@
 package com.medsync.cadastroagendamento.application.usecases;
 
 import com.medsync.cadastroagendamento.application.exceptions.UsuarioNaoEncontradoException;
+import com.medsync.cadastroagendamento.domain.entities.Role;
 import com.medsync.cadastroagendamento.domain.entities.Usuario;
+import com.medsync.cadastroagendamento.domain.enums.TipoRole;
 import com.medsync.cadastroagendamento.domain.gateways.UsuarioGateway;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -35,13 +37,20 @@ class BuscarUsuarioPorEmailUseCaseTest {
     void setUp() {
         email = "joao@email.com";
 
+        Role role = new Role();
+        role.setId(UUID.randomUUID());
+        role.setTipo(TipoRole.MEDICO);
+        role.setDescricao("Médico");
+        role.setCriadoEm(LocalDateTime.now().minusDays(1));
+        role.setAtualizadoEm(LocalDateTime.now().minusDays(1));
+
         usuario = new Usuario();
         usuario.setId(UUID.randomUUID());
         usuario.setNome("João Silva");
         usuario.setCpf("12345678901");
         usuario.setEmail(email);
         usuario.setSenhaHash("senha_hash");
-        usuario.setRoleId(UUID.randomUUID());
+        usuario.setRole(role);
         usuario.setAtivo(true);
         usuario.setCriadoEm(LocalDateTime.now().minusDays(1));
         usuario.setAtualizadoEm(LocalDateTime.now().minusDays(1));

@@ -2,7 +2,9 @@ package com.medsync.cadastroagendamento.application.usecases;
 
 import com.medsync.cadastroagendamento.application.exceptions.EmailJaExisteException;
 import com.medsync.cadastroagendamento.application.exceptions.UsuarioNaoEncontradoException;
+import com.medsync.cadastroagendamento.domain.entities.Role;
 import com.medsync.cadastroagendamento.domain.entities.Usuario;
+import com.medsync.cadastroagendamento.domain.enums.TipoRole;
 import com.medsync.cadastroagendamento.domain.gateways.UsuarioGateway;
 import com.medsync.cadastroagendamento.presentation.dto.AtualizarUsuarioRequest;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,13 +46,20 @@ class AtualizarUsuarioUseCaseTest {
     void setUp() {
         usuarioId = UUID.randomUUID();
         
+        Role role = new Role();
+        role.setId(UUID.randomUUID());
+        role.setTipo(TipoRole.MEDICO);
+        role.setDescricao("Médico");
+        role.setCriadoEm(LocalDateTime.now().minusDays(1));
+        role.setAtualizadoEm(LocalDateTime.now().minusDays(1));
+        
         usuario = new Usuario();
         usuario.setId(usuarioId);
         usuario.setNome("João Silva");
         usuario.setCpf("12345678901");
         usuario.setEmail("joao@email.com");
         usuario.setSenhaHash("hash_antigo");
-        usuario.setRoleId(UUID.randomUUID());
+        usuario.setRole(role);
         usuario.setAtivo(true);
         usuario.setCriadoEm(LocalDateTime.now().minusDays(1));
         usuario.setAtualizadoEm(LocalDateTime.now().minusDays(1));

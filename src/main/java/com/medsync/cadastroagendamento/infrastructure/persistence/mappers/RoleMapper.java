@@ -13,10 +13,8 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface RoleMapper {
     
-    @Mapping(target = "permissoes", source = "permissoes", qualifiedByName = "permissaoJpaToPermissao")
     Role toDomain(RoleJpaEntity jpaEntity);
     
-    @Mapping(target = "permissoes", source = "permissoes", qualifiedByName = "permissaoToPermissaoJpa")
     RoleJpaEntity toJpa(Role domain);
     
     @Named("permissaoJpaToPermissao")

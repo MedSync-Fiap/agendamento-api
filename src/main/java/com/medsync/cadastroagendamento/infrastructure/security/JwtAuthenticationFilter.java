@@ -35,7 +35,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
-            
+                
             try {
                 String email = jwtConfig.getUsernameFromToken(token);
                 UUID userId = jwtConfig.getUserIdFromToken(token);

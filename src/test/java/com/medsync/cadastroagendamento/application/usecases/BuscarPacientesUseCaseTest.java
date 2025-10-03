@@ -1,6 +1,8 @@
 package com.medsync.cadastroagendamento.application.usecases;
 
+import com.medsync.cadastroagendamento.domain.entities.Role;
 import com.medsync.cadastroagendamento.domain.entities.Usuario;
+import com.medsync.cadastroagendamento.domain.enums.TipoRole;
 import com.medsync.cadastroagendamento.domain.gateways.UsuarioGateway;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -32,13 +34,27 @@ class BuscarPacientesUseCaseTest {
 
     @BeforeEach
     void setUp() {
+        Role rolePaciente1 = new Role();
+        rolePaciente1.setId(UUID.randomUUID());
+        rolePaciente1.setTipo(TipoRole.PACIENTE);
+        rolePaciente1.setDescricao("Paciente");
+        rolePaciente1.setCriadoEm(LocalDateTime.now().minusDays(1));
+        rolePaciente1.setAtualizadoEm(LocalDateTime.now().minusDays(1));
+
+        Role rolePaciente2 = new Role();
+        rolePaciente2.setId(UUID.randomUUID());
+        rolePaciente2.setTipo(TipoRole.PACIENTE);
+        rolePaciente2.setDescricao("Paciente");
+        rolePaciente2.setCriadoEm(LocalDateTime.now().minusDays(2));
+        rolePaciente2.setAtualizadoEm(LocalDateTime.now().minusDays(2));
+
         Usuario paciente1 = new Usuario();
         paciente1.setId(UUID.randomUUID());
         paciente1.setNome("João Silva");
         paciente1.setCpf("12345678901");
         paciente1.setEmail("joao@email.com");
         paciente1.setSenhaHash("senha_hash");
-        paciente1.setRoleId(UUID.randomUUID());
+        paciente1.setRole(rolePaciente1);
         paciente1.setAtivo(true);
         paciente1.setCriadoEm(LocalDateTime.now().minusDays(1));
         paciente1.setAtualizadoEm(LocalDateTime.now().minusDays(1));
@@ -49,7 +65,7 @@ class BuscarPacientesUseCaseTest {
         paciente2.setCpf("98765432109");
         paciente2.setEmail("maria@email.com");
         paciente2.setSenhaHash("senha_hash");
-        paciente2.setRoleId(UUID.randomUUID());
+        paciente2.setRole(rolePaciente2);
         paciente2.setAtivo(true);
         paciente2.setCriadoEm(LocalDateTime.now().minusDays(2));
         paciente2.setAtualizadoEm(LocalDateTime.now().minusDays(2));

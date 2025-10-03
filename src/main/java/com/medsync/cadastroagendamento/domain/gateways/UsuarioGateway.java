@@ -1,19 +1,22 @@
 package com.medsync.cadastroagendamento.domain.gateways;
 
 import com.medsync.cadastroagendamento.domain.entities.Usuario;
+import com.medsync.cadastroagendamento.domain.enums.TipoRole;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 public interface UsuarioGateway {
-    Usuario salvar(Usuario usuario);
     Optional<Usuario> buscarPorId(UUID id);
     Optional<Usuario> buscarPorEmail(String email);
     Optional<Usuario> buscarPorCpf(String cpf);
-    List<Usuario> buscarPorRole(UUID roleId);
+    Usuario salvar(Usuario usuario);
     List<Usuario> buscarTodos();
+    List<Usuario> buscarPorRole(UUID roleId);
     List<Usuario> buscarMedicos();
     List<Usuario> buscarPacientes();
+    List<Usuario> buscarUsuariosPorRole(TipoRole role);
     void deletar(UUID id);
     boolean existePorEmail(String email);
     boolean existePorCpf(String cpf);
