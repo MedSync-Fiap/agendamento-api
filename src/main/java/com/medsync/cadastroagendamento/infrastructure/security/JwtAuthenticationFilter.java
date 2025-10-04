@@ -31,6 +31,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, 
                                     FilterChain filterChain) throws ServletException, IOException {
         
+        // Pular autenticação para rotas públicas
+        String requestPath = request.getRequestURI();
+        if (isPublicPath(requestPath)) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+        
         String authHeader = request.getHeader("Authorization");
         
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
@@ -72,5 +79,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
         
         filterChain.doFilter(request, response);
+    }
+    
+    private boolean isPublicPath(String path) {
+        return path.startsWith("/auth/") ||
+               path.startsWith("/usuarios") ||
+               path.startsWith("/actuator/") ||
+               path.startsWith("/v3/api-docs/") ||
+               path.startsWith("/api-docs/") ||
+               path.startsWith("/swagger-ui/") ||
+               path.equals("/swagger-ui.html");
     }
 }

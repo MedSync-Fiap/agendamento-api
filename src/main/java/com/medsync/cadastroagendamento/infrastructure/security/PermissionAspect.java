@@ -10,7 +10,10 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collection;
@@ -40,6 +43,12 @@ public class PermissionAspect {
         boolean requireAll = annotation.requireAll();
         
         if (requiredPermissions.length == 0) {
+            return joinPoint.proceed();
+        }
+        
+        // Verificar se é uma requisição local (do serviço de notificações)
+        if (isLocalRequest()) {
+            logger.debug("Permitindo acesso local ao método: {}", method.getName());
             return joinPoint.proceed();
         }
         
@@ -79,5 +88,42 @@ public class PermissionAspect {
                     authentication.getName(), method.getName());
         
         return joinPoint.proceed();
+    }
+    
+    /**
+     * Verifica se a requisição é do serviço de notificações (porta 8082)
+     */
+    private boolean isLocalRequest() {
+        try {
+            ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+            if (attributes == null) {
+                return false;
+            }
+            
+            HttpServletRequest request = attributes.getRequest();
+            String remoteAddr = request.getRemoteAddr();
+            String serviceSource = request.getHeader("X-Service-Source");
+            String servicePort = request.getHeader("X-Service-Port");
+            
+            // Verificar se é localhost
+            boolean isLocalhost = "127.0.0.1".equals(remoteAddr) || 
+                                 "0:0:0:0:0:0:0:1".equals(remoteAddr) ||
+                                 "localhost".equals(remoteAddr);
+            
+            // Verificar se vem do serviço de notificações específico
+            boolean isNotificacaoService = "notificacao-api".equals(serviceSource) && "8082".equals(servicePort);
+            
+            if (isLocalhost && isNotificacaoService) {
+                logger.debug("Requisição do serviço de notificações detectada - RemoteAddr: {}, ServiceSource: {}, ServicePort: {}", 
+                           remoteAddr, serviceSource, servicePort);
+                return true;
+            }
+            
+            return false;
+                   
+        } catch (Exception e) {
+            logger.debug("Erro ao verificar endereço remoto: {}", e.getMessage());
+            return false;
+        }
     }
 }

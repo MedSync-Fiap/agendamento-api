@@ -33,6 +33,9 @@ public class SecurityConfig {
                 
                 .requestMatchers(HttpMethod.POST, "/usuarios").permitAll()
                 
+                // Permitir acesso do serviço de notificações aos usuários
+                .requestMatchers(HttpMethod.GET, "/usuarios/**").permitAll()
+                
                 .requestMatchers(HttpMethod.GET,
                     "/v3/api-docs/**",
                     "/api-docs/**",
