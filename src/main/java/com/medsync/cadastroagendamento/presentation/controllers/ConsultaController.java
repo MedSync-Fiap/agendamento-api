@@ -7,7 +7,6 @@ import com.medsync.cadastroagendamento.infrastructure.security.RequirePermission
 import com.medsync.cadastroagendamento.infrastructure.security.SecurityUtils;
 import com.medsync.cadastroagendamento.presentation.dto.AtualizarConsultaRequest;
 import com.medsync.cadastroagendamento.presentation.dto.CriarConsultaRequest;
-import com.medsync.cadastroagendamento.presentation.dto.ConsultaResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -58,7 +57,7 @@ public class ConsultaController {
                 .body("Consulta criada com sucesso e enviada para o histórico");
     }
     
-    @GetMapping("/{id}")
+    @GetMapping("/{id}/paciente/{pacienteId}")
     @RequirePermission("VISUALIZAR_CONSULTAS")
     @Operation(summary = "Buscar consulta por ID", description = "Retorna uma consulta específica pelo seu ID")
     @ApiResponses(value = {
@@ -67,9 +66,10 @@ public class ConsultaController {
             @ApiResponse(responseCode = "403", description = "Usuário não tem permissão para visualizar consultas")
     })
     public ResponseEntity<Map<String, Object>> buscarPorId(
-            @Parameter(description = "ID da consulta") @PathVariable UUID id) {
+            @Parameter(description = "ID da consulta") @PathVariable UUID id,
+            @Parameter(description = "ID do paciente") @PathVariable UUID pacienteId) {
         // Buscar consulta no histórico via GraphQL
-        Map<String, Object> consulta = historicoPatientClient.buscarConsulta(id, null);
+        Map<String, Object> consulta = historicoPatientClient.buscarConsulta(id, pacienteId);
         return ResponseEntity.ok(consulta);
     }
     
