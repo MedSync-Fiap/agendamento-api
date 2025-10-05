@@ -1,63 +1,65 @@
 package com.medsync.cadastroagendamento.infrastructure.config;
 
-import com.medsync.cadastroagendamento.infrastructure.config.properties.AppProperties;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
-import org.springframework.amqp.support.converter.MessageConverter;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class RabbitMQConfig {
-    
-    private final AppProperties appProperties;
-    
-    public RabbitMQConfig(AppProperties appProperties) {
-        this.appProperties = appProperties;
-    }
-    
+
+    @Value("${app.rabbitmq.exchange-consultas}")
+    private String exchangeConsultas;
+
+    @Value("${app.rabbitmq.queue-notificacoes}")
+    private String queueNotificacoes;
+
+    @Value("${app.rabbitmq.routing-key-notificacoes}")
+    private String routingKeyNotificacoes;
+
+    // Exchange para consultas
     @Bean
     public TopicExchange exchangeConsultas() {
-        return new TopicExchange(appProperties.getRabbitmq().getExchangeConsultas());
+        return new TopicExchange(exchangeConsultas, true, false);
     }
-    
+
+    // Fila para notificações
     @Bean
-    public Queue filaHistorico() {
-        return QueueBuilder.durable(appProperties.getRabbitmq().getQueueHistorico()).build();
+    public Queue queueNotificacoes() {
+        return QueueBuilder.durable(queueNotificacoes).build();
     }
-    
-    @Bean
-    public Queue filaNotificacoes() {
-        return QueueBuilder.durable(appProperties.getRabbitmq().getQueueNotificacoes()).build();
-    }
-    
-    @Bean
-    public Binding bindingHistorico() {
-        return BindingBuilder
-                .bind(filaHistorico())
-                .to(exchangeConsultas())
-                .with(appProperties.getRabbitmq().getRoutingKeyHistorico());
-    }
-    
+
+    // Binding para notificações
     @Bean
     public Binding bindingNotificacoes() {
         return BindingBuilder
-                .bind(filaNotificacoes())
+                .bind(queueNotificacoes())
                 .to(exchangeConsultas())
-                .with(appProperties.getRabbitmq().getRoutingKeyNotificacoes());
+                .with(routingKeyNotificacoes);
     }
-    
+
+    // Configuração do RabbitTemplate
     @Bean
-    public MessageConverter messageConverter() {
-        return new Jackson2JsonMessageConverter();
-    }
-    
-    @Bean
-    public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory) {
+    public RabbitTemplate rabbitTemplate(ConnectionFactory connectionFactory, org.springframework.amqp.support.converter.MessageConverter messageConverter) {
         RabbitTemplate template = new RabbitTemplate(connectionFactory);
-        template.setMessageConverter(messageConverter());
+        template.setMessageConverter(messageConverter);
         return template;
+    }
+
+    // Configuração do MessageConverter JSON para serializar objetos complexos
+    @Bean
+    public org.springframework.amqp.support.converter.MessageConverter messageConverter() {
+        return new org.springframework.amqp.support.converter.SimpleMessageConverter();
+    }
+    
+    
+    // Getter para routing key
+    public String routingKeyNotificacoes() {
+        return routingKeyNotificacoes;
     }
 }

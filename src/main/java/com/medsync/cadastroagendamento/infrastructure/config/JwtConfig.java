@@ -93,4 +93,11 @@ public class JwtConfig {
     public Long getExpirationTime() {
         return appProperties.getSecurity().getJwt().getExpiration();
     }
+    
+    public String generateServiceToken() {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("service", "agendamento-api");
+        claims.put("type", "service-to-service");
+        return createToken(claims, "agendamento-service");
+    }
 }

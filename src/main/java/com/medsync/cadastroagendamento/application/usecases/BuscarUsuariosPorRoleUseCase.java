@@ -1,6 +1,7 @@
 package com.medsync.cadastroagendamento.application.usecases;
 
 import com.medsync.cadastroagendamento.domain.entities.Usuario;
+import com.medsync.cadastroagendamento.domain.enums.TipoRole;
 import com.medsync.cadastroagendamento.domain.gateways.UsuarioGateway;
 import org.springframework.stereotype.Component;
 
@@ -16,7 +17,8 @@ public class BuscarUsuariosPorRoleUseCase {
         this.usuarioGateway = usuarioGateway;
     }
     
-    public List<Usuario> executar(UUID roleId) {
-        return usuarioGateway.buscarPorRole(roleId);
+    public List<Usuario> executar(String role) {
+        TipoRole tipoRole = TipoRole.valueOf(role.toUpperCase());
+        return usuarioGateway.buscarUsuariosPorRole(tipoRole);
     }
 }

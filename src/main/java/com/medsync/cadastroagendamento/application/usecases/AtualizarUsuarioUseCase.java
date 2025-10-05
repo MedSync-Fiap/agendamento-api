@@ -2,7 +2,9 @@ package com.medsync.cadastroagendamento.application.usecases;
 
 import com.medsync.cadastroagendamento.application.exceptions.EmailJaExisteException;
 import com.medsync.cadastroagendamento.application.exceptions.UsuarioNaoEncontradoException;
+import com.medsync.cadastroagendamento.domain.entities.Role;
 import com.medsync.cadastroagendamento.domain.entities.Usuario;
+import com.medsync.cadastroagendamento.domain.gateways.RoleGateway;
 import com.medsync.cadastroagendamento.domain.gateways.UsuarioGateway;
 import com.medsync.cadastroagendamento.presentation.dto.AtualizarUsuarioRequest;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -15,10 +17,12 @@ import java.util.UUID;
 public class AtualizarUsuarioUseCase {
     
     private final UsuarioGateway usuarioGateway;
+    private final RoleGateway roleGateway;
     private final PasswordEncoder passwordEncoder;
     
-    public AtualizarUsuarioUseCase(UsuarioGateway usuarioGateway, PasswordEncoder passwordEncoder) {
+    public AtualizarUsuarioUseCase(UsuarioGateway usuarioGateway, RoleGateway roleGateway, PasswordEncoder passwordEncoder) {
         this.usuarioGateway = usuarioGateway;
+        this.roleGateway = roleGateway;
         this.passwordEncoder = passwordEncoder;
     }
     
@@ -49,7 +53,9 @@ public class AtualizarUsuarioUseCase {
         }
         
         if (request.roleId() != null) {
-            usuario.setRoleId(request.roleId());
+            Role novaRole = roleGateway.buscarPorId(request.roleId())
+                    .orElseThrow(() -> new RuntimeException("Role não encontrada: " + request.roleId()));
+            usuario.setRole(novaRole);
         }
     }
     

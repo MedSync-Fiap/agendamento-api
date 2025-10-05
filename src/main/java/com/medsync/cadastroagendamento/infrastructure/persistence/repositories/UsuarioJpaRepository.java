@@ -1,5 +1,6 @@
 package com.medsync.cadastroagendamento.infrastructure.persistence.repositories;
 
+import com.medsync.cadastroagendamento.domain.enums.TipoRole;
 import com.medsync.cadastroagendamento.infrastructure.persistence.entities.UsuarioJpaEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -37,4 +38,7 @@ public interface UsuarioJpaRepository extends JpaRepository<UsuarioJpaEntity, UU
     
     @Query("SELECT u FROM UsuarioJpaEntity u LEFT JOIN FETCH u.telefones WHERE u.email = :email")
     Optional<UsuarioJpaEntity> findByEmailWithTelefones(@Param("email") String email);
+    
+    @Query("SELECT u FROM UsuarioJpaEntity u JOIN u.role r WHERE r.tipo = :roleTipo AND u.ativo = true")
+    List<UsuarioJpaEntity> findByRoleTipo(@Param("roleTipo") TipoRole roleTipo);
 }

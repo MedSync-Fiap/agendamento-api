@@ -7,23 +7,24 @@ import java.util.UUID;
 
 public class Role {
     private UUID id;
-    private String nome;
-    private String descricao;
     private TipoRole tipo;
+    private String descricao;
+    private List<Permissao> permissoes;
     private LocalDateTime criadoEm;
     private LocalDateTime atualizadoEm;
-    private List<Permissao> permissoes;
 
     public Role() {}
 
-    public Role(UUID id, String nome, String descricao, LocalDateTime criadoEm, LocalDateTime atualizadoEm) {
+    public Role(UUID id, TipoRole tipo, String descricao, List<Permissao> permissoes, LocalDateTime criadoEm, LocalDateTime atualizadoEm) {
         this.id = id;
-        this.nome = nome;
+        this.tipo = tipo;
         this.descricao = descricao;
+        this.permissoes = permissoes;
         this.criadoEm = criadoEm;
         this.atualizadoEm = atualizadoEm;
     }
 
+    // Getters e Setters
     public UUID getId() {
         return id;
     }
@@ -32,12 +33,12 @@ public class Role {
         this.id = id;
     }
 
-    public String getNome() {
-        return nome;
+    public TipoRole getTipo() {
+        return tipo;
     }
 
-    public void setNome(String nome) {
-        this.nome = nome;
+    public void setTipo(TipoRole tipo) {
+        this.tipo = tipo;
     }
 
     public String getDescricao() {
@@ -46,14 +47,6 @@ public class Role {
 
     public void setDescricao(String descricao) {
         this.descricao = descricao;
-    }
-
-    public TipoRole getTipo() {
-        return tipo;
-    }
-
-    public void setTipo(TipoRole tipo) {
-        this.tipo = tipo;
     }
 
     public LocalDateTime getCriadoEm() {
@@ -71,17 +64,12 @@ public class Role {
     public void setAtualizadoEm(LocalDateTime atualizadoEm) {
         this.atualizadoEm = atualizadoEm;
     }
-
+    
     public List<Permissao> getPermissoes() {
         return permissoes;
     }
-
+    
     public void setPermissoes(List<Permissao> permissoes) {
         this.permissoes = permissoes;
-    }
-
-    public boolean hasPermission(String permissionName) {
-        return permissoes != null && permissoes.stream()
-                .anyMatch(permissao -> permissao.getNome().equals(permissionName));
     }
 }

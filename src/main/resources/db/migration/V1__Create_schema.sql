@@ -71,26 +71,8 @@ CREATE TABLE tb_especialidade_medico (
     FOREIGN KEY (especialidade_id) REFERENCES tb_especialidade(id) ON DELETE CASCADE
 );
 
--- Create consultations table
-CREATE TABLE tb_consulta (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    paciente_id UUID NOT NULL,
-    medico_id UUID NOT NULL,
-    data_hora TIMESTAMP NOT NULL,
-    observacoes TEXT,
-    status VARCHAR(20) NOT NULL DEFAULT 'AGENDADA',
-    criado_por_id UUID NOT NULL,
-    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (paciente_id) REFERENCES tb_usuario(id),
-    FOREIGN KEY (medico_id) REFERENCES tb_usuario(id),
-    FOREIGN KEY (criado_por_id) REFERENCES tb_usuario(id)
-);
 
 -- Create indexes for better performance
 CREATE INDEX idx_usuario_email ON tb_usuario(email);
 CREATE INDEX idx_usuario_cpf ON tb_usuario(cpf);
-CREATE INDEX idx_consulta_paciente ON tb_consulta(paciente_id);
-CREATE INDEX idx_consulta_medico ON tb_consulta(medico_id);
-CREATE INDEX idx_consulta_data_hora ON tb_consulta(data_hora);
 CREATE INDEX idx_usuario_telefone_usuario ON tb_usuario_telefone(usuario_id);

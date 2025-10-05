@@ -1,8 +1,11 @@
 package com.medsync.cadastroagendamento.application.usecases;
 
-import com.medsync.cadastroagendamento.application.exceptions.CpfJaExisteException;
 import com.medsync.cadastroagendamento.application.exceptions.EmailJaExisteException;
+import com.medsync.cadastroagendamento.application.exceptions.CpfJaExisteException;
+import com.medsync.cadastroagendamento.application.exceptions.RoleNaoEncontradaException;
+import com.medsync.cadastroagendamento.domain.entities.Role;
 import com.medsync.cadastroagendamento.domain.entities.Usuario;
+import com.medsync.cadastroagendamento.domain.gateways.RoleGateway;
 import com.medsync.cadastroagendamento.domain.gateways.UsuarioGateway;
 import com.medsync.cadastroagendamento.presentation.dto.CriarUsuarioRequest;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -15,45 +18,46 @@ import java.util.UUID;
 public class CriarUsuarioUseCase {
     
     private final UsuarioGateway usuarioGateway;
+    private final RoleGateway roleGateway;
     private final PasswordEncoder passwordEncoder;
     
-    public CriarUsuarioUseCase(UsuarioGateway usuarioGateway, PasswordEncoder passwordEncoder) {
+    public CriarUsuarioUseCase(UsuarioGateway usuarioGateway, RoleGateway roleGateway, PasswordEncoder passwordEncoder) {
         this.usuarioGateway = usuarioGateway;
+        this.roleGateway = roleGateway;
         this.passwordEncoder = passwordEncoder;
     }
     
     public Usuario executar(CriarUsuarioRequest request) {
-        validarEmailNaoExiste(request.email());
-        validarCpfNaoExiste(request.cpf());
+        validarDadosUnicos(request.email(), request.cpf());
         
-        Usuario usuario = criarUsuario(request);
+        Role role = buscarRole(request.roleId());
+        
+        Usuario usuario = new Usuario();
+        usuario.setId(UUID.randomUUID());
+        usuario.setNome(request.nome());
+        usuario.setEmail(request.email());
+        usuario.setSenhaHash(passwordEncoder.encode(request.senha()));
+        usuario.setCpf(request.cpf());
+        usuario.setDataNascimento(request.dataNascimento());
+        usuario.setRole(role);
+        usuario.setCriadoEm(LocalDateTime.now());
+        usuario.setAtualizadoEm(LocalDateTime.now());
+        
         return usuarioGateway.salvar(usuario);
     }
     
-    private void validarEmailNaoExiste(String email) {
+    private void validarDadosUnicos(String email, String cpf) {
         if (usuarioGateway.existePorEmail(email)) {
             throw new EmailJaExisteException(email);
         }
-    }
-    
-    private void validarCpfNaoExiste(String cpf) {
+        
         if (usuarioGateway.existePorCpf(cpf)) {
             throw new CpfJaExisteException(cpf);
         }
     }
     
-    private Usuario criarUsuario(CriarUsuarioRequest request) {
-        Usuario usuario = new Usuario();
-        usuario.setId(UUID.randomUUID());
-        usuario.setNome(request.nome());
-        usuario.setCpf(request.cpf());
-        usuario.setEmail(request.email());
-        usuario.setSenhaHash(passwordEncoder.encode(request.senha()));
-        usuario.setDataNascimento(request.dataNascimento());
-        usuario.setRoleId(request.roleId());
-        usuario.setAtivo(true);
-        usuario.setCriadoEm(LocalDateTime.now());
-        usuario.setAtualizadoEm(LocalDateTime.now());
-        return usuario;
+    private Role buscarRole(UUID roleId) {
+        return roleGateway.buscarPorId(roleId)
+                .orElseThrow(() -> new RoleNaoEncontradaException(roleId));
     }
 }

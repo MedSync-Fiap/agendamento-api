@@ -1,7 +1,9 @@
 package com.medsync.cadastroagendamento.application.usecases;
 
 import com.medsync.cadastroagendamento.application.exceptions.CredenciaisInvalidasException;
+    import com.medsync.cadastroagendamento.domain.entities.Role;
 import com.medsync.cadastroagendamento.domain.entities.Usuario;
+import com.medsync.cadastroagendamento.domain.enums.TipoRole;
 import com.medsync.cadastroagendamento.domain.gateways.UsuarioGateway;
 import com.medsync.cadastroagendamento.presentation.dto.AutenticarUsuarioRequest;
 import org.junit.jupiter.api.BeforeEach;
@@ -46,13 +48,20 @@ class AutenticarUsuarioUseCaseTest {
         senha = "senha123";
         senhaHash = "hash_da_senha";
 
+        Role role = new Role();
+        role.setId(UUID.randomUUID());
+        role.setTipo(TipoRole.MEDICO);
+        role.setDescricao("Médico");
+        role.setCriadoEm(LocalDateTime.now().minusDays(1));
+        role.setAtualizadoEm(LocalDateTime.now().minusDays(1));
+
         usuario = new Usuario();
         usuario.setId(UUID.randomUUID());
         usuario.setNome("João Silva");
         usuario.setCpf("12345678901");
         usuario.setEmail(email);
         usuario.setSenhaHash(senhaHash);
-        usuario.setRoleId(UUID.randomUUID());
+        usuario.setRole(role);
         usuario.setAtivo(true);
         usuario.setCriadoEm(LocalDateTime.now().minusDays(1));
         usuario.setAtualizadoEm(LocalDateTime.now().minusDays(1));
@@ -193,8 +202,11 @@ class AutenticarUsuarioUseCaseTest {
     @DisplayName("Deve funcionar com diferentes tipos de usuários (médico, paciente, enfermeiro)")
     void deveFuncionarComDiferentesTiposDeUsuarios() {
         // Given
-        UUID roleMedico = UUID.randomUUID();
-        usuario.setRoleId(roleMedico);
+        Role roleMedico = new Role();
+        roleMedico.setId(UUID.randomUUID());
+        roleMedico.setTipo(TipoRole.MEDICO);
+        roleMedico.setDescricao("Médico");
+        usuario.setRole(roleMedico);
         
         when(usuarioGateway.buscarPorEmail(email)).thenReturn(Optional.of(usuario));
         when(passwordEncoder.matches(senha, senhaHash)).thenReturn(true);
@@ -204,7 +216,7 @@ class AutenticarUsuarioUseCaseTest {
 
         // Then
         assertThat(resultado).isNotNull();
-        assertThat(resultado.getRoleId()).isEqualTo(roleMedico);
+        assertThat(resultado.getRole().getId()).isEqualTo(roleMedico.getId());
         assertThat(resultado.getEmail()).isEqualTo(email);
     }
 

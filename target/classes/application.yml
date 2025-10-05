@@ -8,8 +8,18 @@ spring:
   profiles:
     active: dev
   
+  graphql:
+    graphiql:
+      enabled: false
+    path: /graphql
+    enabled: false
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.graphql.GraphQlAutoConfiguration
+      - org.springframework.boot.autoconfigure.graphql.servlet.GraphQlWebMvcAutoConfiguration
+  
   datasource:
-    url: jdbc:postgresql://localhost:5432/medsync_db
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:medsync_db}
     username: ${DB_USERNAME:medsync_user}
     password: ${DB_PASSWORD:medsync_pass}
     driver-class-name: org.postgresql.Driver
@@ -40,7 +50,16 @@ spring:
     username: ${RABBITMQ_USERNAME:guest}
     password: ${RABBITMQ_PASSWORD:guest}
     virtual-host: ${RABBITMQ_VHOST:/}
+  
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    deserialization:
+      fail-on-unknown-properties: false
+    date-format: yyyy-MM-dd'T'HH:mm:ss
+    time-zone: UTC
 
+# Configurações da aplicação
 app:
   name: medsync-cadastro-agendamento
   version: 1.0.0
@@ -48,11 +67,12 @@ app:
     jwt:
       secret: ${JWT_SECRET:mySecretKey123456789012345678901234567890}
       expiration: 86400000
+  historico:
+    graphql:
+      url: ${HISTORICO_GRAPHQL_URL:http://localhost:8081/graphql}
   rabbitmq:
     exchange-consultas: ex_consultas
-    queue-historico: q_historico_consultas
     queue-notificacoes: q_notificacoes_consultas
-    routing-key-historico: consulta.historico
     routing-key-notificacoes: consulta.notificacao
 
 springdoc:
@@ -92,9 +112,9 @@ spring:
       on-profile: dev
   
   datasource:
-    url: jdbc:postgresql://localhost:5432/medsync_db
-    username: medsync_user
-    password: medsync_pass
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:medsync_db}
+    username: ${DB_USERNAME:medsync_user}
+    password: ${DB_PASSWORD:medsync_pass}
 
 ---
 spring:
@@ -103,9 +123,9 @@ spring:
       on-profile: test
   
   datasource:
-    url: jdbc:postgresql://localhost:5432/medsync_test_db
-    username: medsync_test_user
-    password: medsync_test_pass
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:medsync_test_db}
+    username: ${DB_USERNAME:medsync_test_user}
+    password: ${DB_PASSWORD:medsync_test_pass}
   
   jpa:
     hibernate:
@@ -116,7 +136,7 @@ app:
   services:
     historico:
       url: http://localhost:8081
-    consultas:
+    notificacao:
       url: http://localhost:8082
 
 # Circuit Breaker Configuration
@@ -129,9 +149,20 @@ resilience4j:
         sliding-window-size: 10
         minimum-number-of-calls: 5
         permitted-number-of-calls-in-half-open-state: 3
+      notificacao-service:
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 30s
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        permitted-number-of-calls-in-half-open-state: 3
   retry:
     instances:
       historico-service:
+        max-attempts: 3
+        wait-duration: 1s
+        retry-exceptions:
+          - java.lang.Exception
+      notificacao-service:
         max-attempts: 3
         wait-duration: 1s
         retry-exceptions:
@@ -147,7 +178,7 @@ feign:
         logger-level: basic
       historico-service:
         url: http://localhost:8081
-      consulta-service:
+      notificacao-service:
         url: http://localhost:8082
   hystrix:
     enabled: false

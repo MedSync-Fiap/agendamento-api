@@ -3,6 +3,7 @@ package com.medsync.cadastroagendamento.presentation.handler;
 import com.medsync.cadastroagendamento.application.exceptions.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -25,15 +26,6 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
     
-    @ExceptionHandler(ConsultaNaoEncontradaException.class)
-    public ResponseEntity<ErrorResponse> handleConsultaNaoEncontrada(ConsultaNaoEncontradaException ex) {
-        ErrorResponse error = new ErrorResponse(
-            "CONSULTA_NAO_ENCONTRADA",
-            ex.getMessage(),
-            LocalDateTime.now()
-        );
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
-    }
     
     @ExceptionHandler(EmailJaExisteException.class)
     public ResponseEntity<ErrorResponse> handleEmailJaExiste(EmailJaExisteException ex) {
@@ -55,25 +47,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
     }
     
-    @ExceptionHandler(ConflitoHorarioException.class)
-    public ResponseEntity<ErrorResponse> handleConflitoHorario(ConflitoHorarioException ex) {
-        ErrorResponse error = new ErrorResponse(
-            "CONFLITO_HORARIO",
-            ex.getMessage(),
-            LocalDateTime.now()
-        );
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(error);
-    }
     
-    @ExceptionHandler(ConsultaNaoPodeSerEditadaException.class)
-    public ResponseEntity<ErrorResponse> handleConsultaNaoPodeSerEditada(ConsultaNaoPodeSerEditadaException ex) {
-        ErrorResponse error = new ErrorResponse(
-            "CONSULTA_NAO_PODE_SER_EDITADA",
-            ex.getMessage(),
-            LocalDateTime.now()
-        );
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
-    }
     
     @ExceptionHandler(CredenciaisInvalidasException.class)
     public ResponseEntity<ErrorResponse> handleCredenciaisInvalidas(CredenciaisInvalidasException ex) {
@@ -99,6 +73,27 @@ public class GlobalExceptionHandler {
             "Erro de validação nos dados fornecidos",
             LocalDateTime.now(),
             errors
+        );
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+    }
+    
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleHttpMessageNotReadable(HttpMessageNotReadableException ex) {
+        String message = ex.getMessage();
+        
+        // Verificar se é erro de parsing de data
+        if (message != null && message.contains("LocalDateTime")) {
+            message = "Formato de data inválido. Use o formato: yyyy-MM-ddTHH:mm:ss (ex: 2025-12-17T14:30:00)";
+        } else if (message != null && message.contains("JSON parse error")) {
+            message = "Erro ao processar JSON. Verifique o formato dos dados enviados.";
+        } else {
+            message = "Erro ao processar os dados da requisição: " + message;
+        }
+        
+        ErrorResponse error = new ErrorResponse(
+            "INVALID_REQUEST_FORMAT",
+            message,
+            LocalDateTime.now()
         );
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }

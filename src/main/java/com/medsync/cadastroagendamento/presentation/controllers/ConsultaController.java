@@ -1,15 +1,12 @@
 package com.medsync.cadastroagendamento.presentation.controllers;
 
-import com.medsync.cadastroagendamento.application.exceptions.ConsultaNaoEncontradaException;
-import com.medsync.cadastroagendamento.application.services.ConsultaService;
-import com.medsync.cadastroagendamento.domain.entities.Consulta;
-import com.medsync.cadastroagendamento.infrastructure.clients.ConsultaFeignClient;
+import com.medsync.cadastroagendamento.application.usecases.AtualizarConsultaUseCase;
+import com.medsync.cadastroagendamento.application.usecases.CriarConsultaUseCase;
+import com.medsync.cadastroagendamento.infrastructure.clients.HistoricoPatientClient;
 import com.medsync.cadastroagendamento.infrastructure.security.RequirePermission;
 import com.medsync.cadastroagendamento.infrastructure.security.SecurityUtils;
 import com.medsync.cadastroagendamento.presentation.dto.AtualizarConsultaRequest;
 import com.medsync.cadastroagendamento.presentation.dto.CriarConsultaRequest;
-import com.medsync.cadastroagendamento.presentation.dto.ConsultaResponse;
-import com.medsync.cadastroagendamento.presentation.mappers.ConsultaDtoMapper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -20,7 +17,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -28,14 +25,16 @@ import java.util.UUID;
 @Tag(name = "Consultas", description = "API para gerenciamento de consultas médicas")
 public class ConsultaController {
     
-    private final ConsultaService consultaService;
-    private final ConsultaDtoMapper mapper;
-    private final ConsultaFeignClient consultaFeignClient;
+    private final CriarConsultaUseCase criarConsultaUseCase;
+    private final AtualizarConsultaUseCase atualizarConsultaUseCase;
+    private final HistoricoPatientClient historicoPatientClient;
     
-    public ConsultaController(ConsultaService consultaService, ConsultaDtoMapper mapper, ConsultaFeignClient consultaFeignClient) {
-        this.consultaService = consultaService;
-        this.mapper = mapper;
-        this.consultaFeignClient = consultaFeignClient;
+    public ConsultaController(CriarConsultaUseCase criarConsultaUseCase,
+                            AtualizarConsultaUseCase atualizarConsultaUseCase,
+                            HistoricoPatientClient historicoPatientClient) {
+        this.criarConsultaUseCase = criarConsultaUseCase;
+        this.atualizarConsultaUseCase = atualizarConsultaUseCase;
+        this.historicoPatientClient = historicoPatientClient;
     }
     
     @PostMapping
@@ -47,58 +46,46 @@ public class ConsultaController {
             @ApiResponse(responseCode = "409", description = "Conflito de horário"),
             @ApiResponse(responseCode = "403", description = "Usuário não tem permissão para criar consultas")
     })
-    public ResponseEntity<ConsultaResponse> criarConsulta(
+    public ResponseEntity<String> criarConsulta(
             @Valid @RequestBody CriarConsultaRequest request) {
         UUID usuarioLogadoId = SecurityUtils.getCurrentUserId();
-        var useCaseRequest = mapper.toUseCaseRequest(request);
-        var consulta = consultaService.criarConsulta(useCaseRequest, usuarioLogadoId);
-        var response = mapper.toResponse(consulta);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        
+        // Criar consulta via GraphQL no serviço de histórico
+        criarConsultaUseCase.executar(request, usuarioLogadoId);
+        
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body("Consulta criada com sucesso e enviada para o histórico");
     }
     
-    @GetMapping("/{id}")
+    @GetMapping("/{id}/paciente/{pacienteId}")
     @RequirePermission("VISUALIZAR_CONSULTAS")
     @Operation(summary = "Buscar consulta por ID", description = "Retorna uma consulta específica pelo seu ID")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Consulta encontrada"),
-            @ApiResponse(responseCode = "404", description = "Consulta não encontrada")
+            @ApiResponse(responseCode = "404", description = "Consulta não encontrada"),
+            @ApiResponse(responseCode = "403", description = "Usuário não tem permissão para visualizar consultas")
     })
-    public ResponseEntity<ConsultaResponse> buscarPorId(
-            @Parameter(description = "ID da consulta") @PathVariable UUID id) {
-        var response = consultaFeignClient.buscarConsultaPorId(id);
-        if (response == null) {
-            throw new ConsultaNaoEncontradaException(id);
-        }
-        return ResponseEntity.ok(response);
-    }
-    
-    @GetMapping
-    @RequirePermission("VISUALIZAR_CONSULTAS")
-    @Operation(summary = "Listar todas as consultas", description = "Retorna todas as consultas cadastradas no sistema")
-    @ApiResponse(responseCode = "200", description = "Lista de consultas retornada com sucesso")
-    public ResponseEntity<List<ConsultaResponse>> buscarTodas() {
-        var response = consultaFeignClient.buscarTodasConsultas();
-        return ResponseEntity.ok(response);
+    public ResponseEntity<Map<String, Object>> buscarPorId(
+            @Parameter(description = "ID da consulta") @PathVariable UUID id,
+            @Parameter(description = "ID do paciente") @PathVariable UUID pacienteId) {
+        // Buscar consulta no histórico via GraphQL
+        Map<String, Object> consulta = historicoPatientClient.buscarConsulta(id, pacienteId);
+        return ResponseEntity.ok(consulta);
     }
     
     @GetMapping("/paciente/{pacienteId}")
     @RequirePermission("VISUALIZAR_HISTORICO")
     @Operation(summary = "Buscar consultas por paciente", description = "Retorna todas as consultas de um paciente específico")
-    @ApiResponse(responseCode = "200", description = "Lista de consultas do paciente retornada com sucesso")
-    public ResponseEntity<List<ConsultaResponse>> buscarPorPaciente(
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Lista de consultas do paciente retornada com sucesso"),
+            @ApiResponse(responseCode = "404", description = "Paciente não encontrado"),
+            @ApiResponse(responseCode = "403", description = "Usuário não tem permissão para visualizar histórico")
+    })
+    public ResponseEntity<Map<String, Object>> buscarPorPaciente(
             @Parameter(description = "ID do paciente") @PathVariable UUID pacienteId) {
-        var response = consultaFeignClient.buscarConsultasPorPaciente(pacienteId);
-        return ResponseEntity.ok(response);
-    }
-    
-    @GetMapping("/medico/{medicoId}")
-    @RequirePermission("VISUALIZAR_CONSULTAS")
-    @Operation(summary = "Buscar consultas por médico", description = "Retorna todas as consultas de um médico específico")
-    @ApiResponse(responseCode = "200", description = "Lista de consultas do médico retornada com sucesso")
-    public ResponseEntity<List<ConsultaResponse>> buscarPorMedico(
-            @Parameter(description = "ID do médico") @PathVariable UUID medicoId) {
-        var response = consultaFeignClient.buscarConsultasPorMedico(medicoId);
-        return ResponseEntity.ok(response);
+        // Buscar histórico completo do paciente no histórico via GraphQL
+        Map<String, Object> historico = historicoPatientClient.buscarHistoricoCompleto(pacienteId);
+        return ResponseEntity.ok(historico);
     }
     
     @PutMapping("/{id}")
@@ -108,15 +95,18 @@ public class ConsultaController {
             @ApiResponse(responseCode = "200", description = "Consulta atualizada com sucesso"),
             @ApiResponse(responseCode = "400", description = "Dados inválidos"),
             @ApiResponse(responseCode = "404", description = "Consulta não encontrada"),
-            @ApiResponse(responseCode = "409", description = "Conflito de horário")
+            @ApiResponse(responseCode = "409", description = "Conflito de horário"),
+            @ApiResponse(responseCode = "403", description = "Usuário não tem permissão para editar consultas")
     })
-    public ResponseEntity<ConsultaResponse> atualizarConsulta(
+    public ResponseEntity<String> atualizarConsulta(
             @Parameter(description = "ID da consulta") @PathVariable UUID id,
             @Valid @RequestBody AtualizarConsultaRequest request) {
         UUID usuarioLogadoId = SecurityUtils.getCurrentUserId();
-        var useCaseRequest = mapper.toUseCaseRequest(request);
-        var consulta = consultaService.atualizarConsulta(id, useCaseRequest, usuarioLogadoId);
-        var response = mapper.toResponse(consulta);
-        return ResponseEntity.ok(response);
+        
+        // Atualizar consulta via GraphQL no serviço de histórico
+        // Os IDs do paciente e médico são obtidos do request
+        atualizarConsultaUseCase.executar(id, request.pacienteId(), request.medicoId(), request, usuarioLogadoId);
+        
+        return ResponseEntity.ok("Consulta atualizada com sucesso no histórico");
     }
 }

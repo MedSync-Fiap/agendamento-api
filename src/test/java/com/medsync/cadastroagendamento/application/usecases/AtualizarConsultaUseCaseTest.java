@@ -54,10 +54,10 @@ class AtualizarConsultaUseCaseTest {
     private RabbitMQProperties rabbitmq;
 
     @Mock
-    private ValidarConsultaUseCase validarConsultaUseCase;
+    private PublicarNotificacaoUseCase publicarNotificacaoUseCase;
 
     @Mock
-    private PublicarEventoConsultaUseCase publicarEventoConsultaUseCase;
+    private AtualizarHistoricoUseCase atualizarHistoricoUseCase;
 
     @InjectMocks
     private AtualizarConsultaUseCase atualizarConsultaUseCase;

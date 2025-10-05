@@ -1,6 +1,8 @@
 package com.medsync.cadastroagendamento.application.usecases;
 
+import com.medsync.cadastroagendamento.domain.entities.Role;
 import com.medsync.cadastroagendamento.domain.entities.Usuario;
+import com.medsync.cadastroagendamento.domain.enums.TipoRole;
 import com.medsync.cadastroagendamento.domain.gateways.UsuarioGateway;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -32,13 +34,27 @@ class BuscarMedicosUseCaseTest {
 
     @BeforeEach
     void setUp() {
+        Role roleMedico1 = new Role();
+        roleMedico1.setId(UUID.randomUUID());
+        roleMedico1.setTipo(TipoRole.MEDICO);
+        roleMedico1.setDescricao("Médico");
+        roleMedico1.setCriadoEm(LocalDateTime.now().minusDays(1));
+        roleMedico1.setAtualizadoEm(LocalDateTime.now().minusDays(1));
+
+        Role roleMedico2 = new Role();
+        roleMedico2.setId(UUID.randomUUID());
+        roleMedico2.setTipo(TipoRole.MEDICO);
+        roleMedico2.setDescricao("Médico");
+        roleMedico2.setCriadoEm(LocalDateTime.now().minusDays(2));
+        roleMedico2.setAtualizadoEm(LocalDateTime.now().minusDays(2));
+
         Usuario medico1 = new Usuario();
         medico1.setId(UUID.randomUUID());
         medico1.setNome("Dr. João Silva");
         medico1.setCpf("12345678901");
         medico1.setEmail("joao@email.com");
         medico1.setSenhaHash("senha_hash");
-        medico1.setRoleId(UUID.randomUUID());
+        medico1.setRole(roleMedico1);
         medico1.setAtivo(true);
         medico1.setCriadoEm(LocalDateTime.now().minusDays(1));
         medico1.setAtualizadoEm(LocalDateTime.now().minusDays(1));
@@ -49,7 +65,7 @@ class BuscarMedicosUseCaseTest {
         medico2.setCpf("98765432109");
         medico2.setEmail("maria@email.com");
         medico2.setSenhaHash("senha_hash");
-        medico2.setRoleId(UUID.randomUUID());
+        medico2.setRole(roleMedico2);
         medico2.setAtivo(true);
         medico2.setCriadoEm(LocalDateTime.now().minusDays(2));
         medico2.setAtualizadoEm(LocalDateTime.now().minusDays(2));

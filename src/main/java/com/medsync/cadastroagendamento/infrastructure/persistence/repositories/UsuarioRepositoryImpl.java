@@ -1,6 +1,7 @@
 package com.medsync.cadastroagendamento.infrastructure.persistence.repositories;
 
 import com.medsync.cadastroagendamento.domain.entities.Usuario;
+import com.medsync.cadastroagendamento.domain.enums.TipoRole;
 import com.medsync.cadastroagendamento.domain.gateways.UsuarioGateway;
 import com.medsync.cadastroagendamento.infrastructure.persistence.entities.UsuarioJpaEntity;
 import com.medsync.cadastroagendamento.infrastructure.persistence.mappers.UsuarioMapper;
@@ -108,5 +109,20 @@ public class UsuarioRepositoryImpl implements UsuarioGateway {
     @Override
     public boolean existePorCpf(String cpf) {
         return jpaRepository.existsByCpf(cpf);
+    }
+    
+    @Override
+    public List<Usuario> buscarUsuariosPorRole(TipoRole role) {
+        return jpaRepository.findByRoleTipo(role)
+                .stream()
+                .map(jpaEntity -> {
+                    // Carregar role com permissões
+                    if (jpaEntity.getRoleId() != null) {
+                        roleJpaRepository.findByIdWithPermissions(jpaEntity.getRoleId())
+                                .ifPresent(jpaEntity::setRole);
+                    }
+                    return mapper.toDomain(jpaEntity);
+                })
+                .toList();
     }
 }
