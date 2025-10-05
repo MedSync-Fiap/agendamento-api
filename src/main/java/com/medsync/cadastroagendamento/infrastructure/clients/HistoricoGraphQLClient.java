@@ -130,7 +130,7 @@ public class HistoricoGraphQLClient {
         
         return String.format("""
             mutation SalvarHistorico {
-                salvarHistorico(input: {
+                saveNewAppointment(newAppointmentInput: {
                     consultaId: "%s"
                     dataHora: "%s"
                     status: "%s"
@@ -191,7 +191,7 @@ public class HistoricoGraphQLClient {
         
         return String.format("""
             mutation AtualizarHistorico {
-                atualizarHistorico(input: {
+                updateAppointment(updateAppointmentInput: {
                     consultaId: "%s"
                     dataHora: "%s"
                     status: "%s"
