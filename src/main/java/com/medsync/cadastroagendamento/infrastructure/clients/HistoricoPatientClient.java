@@ -1,6 +1,8 @@
 package com.medsync.cadastroagendamento.infrastructure.clients;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.medsync.cadastroagendamento.application.dto.M2MJwt;
+import com.medsync.cadastroagendamento.application.service.M2MJwtGeneratorService;
 import com.medsync.cadastroagendamento.presentation.dto.AtualizarPacienteRequest;
 import com.medsync.cadastroagendamento.presentation.dto.CriarPacienteRequest;
 import org.slf4j.Logger;
@@ -13,7 +15,6 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 
-import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
@@ -25,6 +26,7 @@ public class HistoricoPatientClient {
     private static final Logger logger = LoggerFactory.getLogger(HistoricoPatientClient.class);
     
     private final RestTemplate restTemplate;
+    private final M2MJwtGeneratorService jwtGeneratorService;
     
     @Autowired
     private ObjectMapper objectMapper;
@@ -32,8 +34,9 @@ public class HistoricoPatientClient {
     @Value("${app.historico.graphql.url:http://localhost:8081/graphql}")
     private String historicoGraphQLUrl;
     
-    public HistoricoPatientClient(RestTemplate restTemplate) {
+    public HistoricoPatientClient(RestTemplate restTemplate, M2MJwtGeneratorService jwtGeneratorService) {
         this.restTemplate = restTemplate;
+        this.jwtGeneratorService = jwtGeneratorService;
     }
     
     /**
@@ -254,8 +257,11 @@ public class HistoricoPatientClient {
     
     private Map<String, Object> executeGraphQLQuery(String query) {
         try {
+            M2MJwt jwt = jwtGeneratorService.getTokenHistorico();
+
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setBearerAuth(jwt.token());
             
             Map<String, String> requestBody = new HashMap<>();
             requestBody.put("query", query);
