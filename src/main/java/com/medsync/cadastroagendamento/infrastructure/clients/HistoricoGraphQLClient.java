@@ -1,6 +1,8 @@
 package com.medsync.cadastroagendamento.infrastructure.clients;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.medsync.cadastroagendamento.application.dto.M2MJwt;
+import com.medsync.cadastroagendamento.application.service.M2MJwtGeneratorService;
 import com.medsync.cadastroagendamento.domain.entities.Especialidade;
 import com.medsync.cadastroagendamento.domain.entities.Usuario;
 import com.medsync.cadastroagendamento.domain.gateways.EspecialidadeGateway;
@@ -18,7 +20,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 
 @Component
@@ -30,16 +31,19 @@ public class HistoricoGraphQLClient {
     private final UsuarioGateway usuarioGateway;
     private final EspecialidadeGateway especialidadeGateway;
     private final ObjectMapper objectMapper;
+    private final M2MJwtGeneratorService jwtGeneratorService;
     
     @Value("${app.historico.graphql.url:http://localhost:8081/graphql}")
     private String historicoGraphQLUrl;
     
     public HistoricoGraphQLClient(RestTemplate restTemplate, 
                                  UsuarioGateway usuarioGateway,
-                                 EspecialidadeGateway especialidadeGateway) {
+                                 EspecialidadeGateway especialidadeGateway,
+                                  M2MJwtGeneratorService jwtGeneratorService) {
         this.restTemplate = restTemplate;
         this.usuarioGateway = usuarioGateway;
         this.especialidadeGateway = especialidadeGateway;
+        this.jwtGeneratorService = jwtGeneratorService;
         this.objectMapper = new ObjectMapper();
     }
     
@@ -248,8 +252,11 @@ public class HistoricoGraphQLClient {
     
     private Map<String, Object> executeGraphQLMutation(String mutation) {
         try {
+            M2MJwt jwt = jwtGeneratorService.getTokenHistorico();
+
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setBearerAuth(jwt.token());
             
             Map<String, String> requestBody = new HashMap<>();
             requestBody.put("query", mutation);

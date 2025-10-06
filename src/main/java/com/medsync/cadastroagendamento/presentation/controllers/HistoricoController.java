@@ -1,5 +1,7 @@
 package com.medsync.cadastroagendamento.presentation.controllers;
 
+import com.medsync.cadastroagendamento.application.dto.M2MJwt;
+import com.medsync.cadastroagendamento.application.service.M2MJwtGeneratorService;
 import com.medsync.cadastroagendamento.infrastructure.clients.HistoricoPatientClient;
 import com.medsync.cadastroagendamento.infrastructure.security.RequirePermission;
 import io.swagger.v3.oas.annotations.Operation;
@@ -19,11 +21,27 @@ import java.util.UUID;
 public class HistoricoController {
     
     private final HistoricoPatientClient historicoPatientClient;
+    private final M2MJwtGeneratorService jwtGeneratorService;
     
-    public HistoricoController(HistoricoPatientClient historicoPatientClient) {
+    public HistoricoController(HistoricoPatientClient historicoPatientClient, M2MJwtGeneratorService jwtGeneratorService) {
         this.historicoPatientClient = historicoPatientClient;
+        this.jwtGeneratorService = jwtGeneratorService;
     }
-    
+
+    @GetMapping("/token")
+    @RequirePermission("VISUALIZAR_HISTORICO")
+    @Operation(summary = "Obter token de histórico do paciente",
+            description = "Retorna o token de acesso para o histórico médico completo de um paciente")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Token obtido com sucesso"),
+            @ApiResponse(responseCode = "500", description = "Erro interno do servidor"),
+            @ApiResponse(responseCode = "403", description = "Acesso negado - permissão necessária: VISUALIZAR_HISTORICO")
+    })
+    public ResponseEntity<M2MJwt> obterTokenHistorico() {
+        M2MJwt jwt = jwtGeneratorService.getTokenHistorico();
+        return ResponseEntity.ok(jwt);
+    }
+
     @GetMapping("/paciente/{pacienteId}")
     @RequirePermission("VISUALIZAR_HISTORICO")
     @Operation(summary = "Buscar histórico do paciente", 
