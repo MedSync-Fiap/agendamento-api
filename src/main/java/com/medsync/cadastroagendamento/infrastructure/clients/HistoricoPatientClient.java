@@ -56,9 +56,9 @@ public class HistoricoPatientClient {
     /**
      * Busca histórico médico completo de um paciente
      */
-    public Map<String, Object> buscarHistoricoCompleto(UUID pacienteId) {
+    public Map<String, Object> buscarHistoricoCompleto(UUID pacienteId, Boolean somenteDatasFuturas) {
         try {
-            String query = buildBuscarHistoricoCompletoQuery(pacienteId);
+            String query = buildBuscarHistoricoCompletoQuery(pacienteId, somenteDatasFuturas);
             return executeGraphQLQuery(query);
             
         } catch (Exception e) {
@@ -139,7 +139,7 @@ public class HistoricoPatientClient {
             """, pacienteId);
     }
     
-    private String buildBuscarHistoricoCompletoQuery(UUID pacienteId) {
+    private String buildBuscarHistoricoCompletoQuery(UUID pacienteId, boolean somenteDatasFuturas) {
         return String.format("""
             query {
                 getMedicalHistoryByPatientId(patientId: "%s") {
@@ -150,7 +150,7 @@ public class HistoricoPatientClient {
                         email
                         dateOfBirth
                     }
-                    appointments {
+                    appointments(filter: {onlyFuture: %s}) {
                         id
                         appointmentDateTime
                         status
@@ -170,7 +170,7 @@ public class HistoricoPatientClient {
                     }
                 }
             }
-            """, pacienteId);
+            """, pacienteId, somenteDatasFuturas);
     }
     
     private String buildBuscarConsultaQuery(UUID consultaId, UUID pacienteId) {
