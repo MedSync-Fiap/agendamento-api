@@ -53,9 +53,10 @@ public class HistoricoController {
             @ApiResponse(responseCode = "403", description = "Acesso negado - permissão necessária: VISUALIZAR_HISTORICO")
     })
     public ResponseEntity<Map<String, Object>> buscarHistoricoPaciente(
-            @Parameter(description = "ID do paciente") @PathVariable UUID pacienteId) {
+            @Parameter(description = "ID do paciente") @PathVariable UUID pacienteId,
+            @RequestParam(required = false, defaultValue = "false") boolean somenteDatasFuturas) {
         
-        Map<String, Object> historico = historicoPatientClient.buscarHistoricoCompleto(pacienteId);
+        Map<String, Object> historico = historicoPatientClient.buscarHistoricoCompleto(pacienteId, somenteDatasFuturas);
         
         return ResponseEntity.ok(historico);
     }

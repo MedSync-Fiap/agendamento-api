@@ -1,10 +1,11 @@
 {
 	"info": {
-		"_postman_id": "medsync-agendamento-corrected",
-		"name": "MedSync - Agendamento API (Corrigida)",
+		"_postman_id": "c12bd578-953c-4c8f-af1a-558de2efb000",
+		"name": "MedSync - Agendamento API",
 		"description": "Coleção de APIs para o serviço de agendamento com apenas os endpoints que realmente existem no código.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "medsync-agendamento"
+		"_exporter_id": "44152001",
+		"_collection_link": "https://eatzfiap.postman.co/workspace/Team-Workspace~efc4d0be-07f3-4213-8f2e-6d1dbc32593b/collection/44152001-c12bd578-953c-4c8f-af1a-558de2efb000?action=share&source=collection_link&creator=44152001"
 	},
 	"item": [
 		{
@@ -12,6 +13,20 @@
 			"item": [
 				{
 					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const response = pm.response.json();\r",
+									"pm.environment.set(\"auth_token\", response.token);"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
 					"request": {
 						"method": "POST",
 						"header": [
@@ -26,8 +41,13 @@
 						},
 						"url": {
 							"raw": "{{base_url}}/auth/login",
-							"host": ["{{base_url}}"],
-							"path": ["auth", "login"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
 						},
 						"description": "Autentica um usuário e retorna o token JWT"
 					},
@@ -59,8 +79,12 @@
 						},
 						"url": {
 							"raw": "{{base_url}}/usuarios",
-							"host": ["{{base_url}}"],
-							"path": ["usuarios"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"usuarios"
+							]
 						},
 						"description": "Cria um novo usuário no sistema"
 					},
@@ -78,8 +102,12 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/usuarios",
-							"host": ["{{base_url}}"],
-							"path": ["usuarios"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"usuarios"
+							]
 						},
 						"description": "Lista todos os usuários ativos do sistema"
 					},
@@ -97,8 +125,13 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/usuarios/{{usuario_id}}",
-							"host": ["{{base_url}}"],
-							"path": ["usuarios", "{{usuario_id}}"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"usuarios",
+								"{{usuario_id}}"
+							]
 						},
 						"description": "Busca um usuário específico pelo ID"
 					},
@@ -116,8 +149,13 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/usuarios/medicos",
-							"host": ["{{base_url}}"],
-							"path": ["usuarios", "medicos"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"usuarios",
+								"medicos"
+							]
 						},
 						"description": "Lista todos os médicos do sistema"
 					},
@@ -135,8 +173,13 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/usuarios/pacientes",
-							"host": ["{{base_url}}"],
-							"path": ["usuarios", "pacientes"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"usuarios",
+								"pacientes"
+							]
 						},
 						"description": "Lista todos os pacientes do sistema"
 					},
@@ -154,8 +197,13 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/usuarios/enfermeiros",
-							"host": ["{{base_url}}"],
-							"path": ["usuarios", "enfermeiros"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"usuarios",
+								"enfermeiros"
+							]
 						},
 						"description": "Lista todos os enfermeiros do sistema"
 					},
@@ -173,8 +221,14 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/usuarios/role/MEDICO",
-							"host": ["{{base_url}}"],
-							"path": ["usuarios", "role", "MEDICO"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"usuarios",
+								"role",
+								"MEDICO"
+							]
 						},
 						"description": "Busca usuários por tipo de role (MEDICO, PACIENTE, ENFERMEIRO, ADMIN)"
 					},
@@ -200,8 +254,13 @@
 						},
 						"url": {
 							"raw": "{{base_url}}/usuarios/{{usuario_id}}",
-							"host": ["{{base_url}}"],
-							"path": ["usuarios", "{{usuario_id}}"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"usuarios",
+								"{{usuario_id}}"
+							]
 						},
 						"description": "Atualiza os dados de um usuário existente"
 					},
@@ -219,8 +278,13 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/usuarios/{{usuario_id}}",
-							"host": ["{{base_url}}"],
-							"path": ["usuarios", "{{usuario_id}}"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"usuarios",
+								"{{usuario_id}}"
+							]
 						},
 						"description": "Exclui um usuário do sistema (soft delete)"
 					},
@@ -244,8 +308,12 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/especialidades",
-							"host": ["{{base_url}}"],
-							"path": ["especialidades"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"especialidades"
+							]
 						},
 						"description": "Lista todas as especialidades médicas disponíveis"
 					},
@@ -277,8 +345,12 @@
 						},
 						"url": {
 							"raw": "{{base_url}}/consultas",
-							"host": ["{{base_url}}"],
-							"path": ["consultas"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"consultas"
+							]
 						},
 						"description": "Cria uma nova consulta médica e envia para o histórico"
 					},
@@ -295,9 +367,16 @@
 							}
 						],
 						"url": {
-							"raw": "{{base_url}}/consultas/{{consulta_id}}",
-							"host": ["{{base_url}}"],
-							"path": ["consultas", "{{consulta_id}}"]
+							"raw": "{{base_url}}/consultas/{{consulta_id}}/paciente/{{paciente_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"consultas",
+								"{{consulta_id}}",
+								"paciente",
+								"{{paciente_id}}"
+							]
 						},
 						"description": "Busca uma consulta específica pelo ID no histórico"
 					},
@@ -315,8 +394,21 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/consultas/paciente/{{paciente_id}}",
-							"host": ["{{base_url}}"],
-							"path": ["consultas", "paciente", "{{paciente_id}}"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"consultas",
+								"paciente",
+								"{{paciente_id}}"
+							],
+							"query": [
+								{
+									"key": "somenteDatasFuturas",
+									"value": "true",
+									"disabled": true
+								}
+							]
 						},
 						"description": "Busca todas as consultas de um paciente específico no histórico"
 					},
@@ -342,8 +434,13 @@
 						},
 						"url": {
 							"raw": "{{base_url}}/consultas/{{consulta_id}}",
-							"host": ["{{base_url}}"],
-							"path": ["consultas", "{{consulta_id}}"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"consultas",
+								"{{consulta_id}}"
+							]
 						},
 						"description": "Atualiza uma consulta existente no histórico"
 					},
@@ -375,8 +472,12 @@
 						},
 						"url": {
 							"raw": "{{base_url}}/pacientes",
-							"host": ["{{base_url}}"],
-							"path": ["pacientes"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"pacientes"
+							]
 						},
 						"description": "Cria um novo paciente no histórico"
 					},
@@ -394,8 +495,13 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/pacientes/{{paciente_id}}",
-							"host": ["{{base_url}}"],
-							"path": ["pacientes", "{{paciente_id}}"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"pacientes",
+								"{{paciente_id}}"
+							]
 						},
 						"description": "Busca dados básicos de um paciente no histórico"
 					},
@@ -421,8 +527,13 @@
 						},
 						"url": {
 							"raw": "{{base_url}}/pacientes/{{paciente_id}}",
-							"host": ["{{base_url}}"],
-							"path": ["pacientes", "{{paciente_id}}"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"pacientes",
+								"{{paciente_id}}"
+							]
 						},
 						"description": "Atualiza os dados de um paciente no histórico"
 					},
@@ -440,8 +551,13 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/pacientes/{{paciente_id}}",
-							"host": ["{{base_url}}"],
-							"path": ["pacientes", "{{paciente_id}}"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"pacientes",
+								"{{paciente_id}}"
+							]
 						},
 						"description": "Exclui um paciente do histórico (soft delete)"
 					},
@@ -459,8 +575,21 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/pacientes/{{paciente_id}}/historico",
-							"host": ["{{base_url}}"],
-							"path": ["pacientes", "{{paciente_id}}", "historico"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"pacientes",
+								"{{paciente_id}}",
+								"historico"
+							],
+							"query": [
+								{
+									"key": "somenteDatasFuturas",
+									"value": "true",
+									"disabled": true
+								}
+							]
 						},
 						"description": "Busca o histórico médico completo de um paciente"
 					},
@@ -478,8 +607,15 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/pacientes/{{paciente_id}}/consultas/{{consulta_id}}",
-							"host": ["{{base_url}}"],
-							"path": ["pacientes", "{{paciente_id}}", "consultas", "{{consulta_id}}"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"pacientes",
+								"{{paciente_id}}",
+								"consultas",
+								"{{consulta_id}}"
+							]
 						},
 						"description": "Busca uma consulta específica de um paciente"
 					},
@@ -503,12 +639,135 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/historico/paciente/{{paciente_id}}",
-							"host": ["{{base_url}}"],
-							"path": ["historico", "paciente", "{{paciente_id}}"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"historico",
+								"paciente",
+								"{{paciente_id}}"
+							],
+							"query": [
+								{
+									"key": "somenteDatasFuturas",
+									"value": "true",
+									"disabled": true
+								}
+							]
 						},
 						"description": "Busca o histórico médico completo de um paciente"
 					},
 					"response": []
+				},
+				{
+					"name": "Obter Token API Histórico",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/historico/token",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"historico",
+								"token"
+							]
+						},
+						"description": "Busca o histórico médico completo de um paciente"
+					},
+					"response": [
+						{
+							"name": "200 OK",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{token}}"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/historico/token",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"historico",
+										"token"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": null,
+							"header": [
+								{
+									"key": "Vary",
+									"value": "Origin"
+								},
+								{
+									"key": "Vary",
+									"value": "Access-Control-Request-Method"
+								},
+								{
+									"key": "Vary",
+									"value": "Access-Control-Request-Headers"
+								},
+								{
+									"key": "X-Content-Type-Options",
+									"value": "nosniff"
+								},
+								{
+									"key": "X-XSS-Protection",
+									"value": "0"
+								},
+								{
+									"key": "Cache-Control",
+									"value": "no-cache, no-store, max-age=0, must-revalidate"
+								},
+								{
+									"key": "Pragma",
+									"value": "no-cache"
+								},
+								{
+									"key": "Expires",
+									"value": "0"
+								},
+								{
+									"key": "X-Frame-Options",
+									"value": "DENY"
+								},
+								{
+									"key": "Content-Type",
+									"value": "text/plain;charset=UTF-8"
+								},
+								{
+									"key": "Content-Length",
+									"value": "536"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 06 Oct 2025 11:57:06 GMT"
+								},
+								{
+									"key": "Keep-Alive",
+									"value": "timeout=60"
+								},
+								{
+									"key": "Connection",
+									"value": "keep-alive"
+								}
+							],
+							"cookie": [],
+							"body": "eyJhbGciOiJSUzI1NiJ9.eyJpc3MiOiJtZWRzeW5jLWFnZW5kYW1lbnRvLWFwaSIsInN1YiI6Im0ybS1hZ2VuZGFtZW50by1zZXJ2aWNlIiwiYXVkIjoibWVkc3luYy1oaXN0b3JpY28tYXBpIiwiZXhwIjoxNzU5NzUyNzI1LCJpYXQiOjE3NTk3NTE4MjV9.mW0zvQFbdnQ0EAE9BDG_KuEiZaYBph65YlFr8dkZkX3UIfm8GJNwswiw2m9OkA2w_1M8egUFz1_dudHfpPw_7CALo1SBs9WK6G0YxekmTR3D-EG7eSXux3raE_vGNLzq1MgdxrTqsAi9mJlI0f-gk3A0M4OUQHpqAJJElKfpAf_mDpMv5Y6YqEQg_MPMiOAOSVHmgyXhKpttCpb4uYg-DZa6As0xx8C9wdbTlBaBdFjhdTpHkiWpLNppkGyzaVgEG8nr8p1glWkegdhYxcb6pT2Tz99-QjnGe0csdyTOweANUkc6z9tf8BEzthiNHe7gaqIUmMbAQX8xNH_-_dvS_w"
+						}
+					]
 				},
 				{
 					"name": "Buscar Consulta Específica no Histórico",
@@ -522,8 +781,16 @@
 						],
 						"url": {
 							"raw": "{{base_url}}/historico/consulta/{{consulta_id}}/paciente/{{paciente_id}}",
-							"host": ["{{base_url}}"],
-							"path": ["historico", "consulta", "{{consulta_id}}", "paciente", "{{paciente_id}}"]
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"historico",
+								"consulta",
+								"{{consulta_id}}",
+								"paciente",
+								"{{paciente_id}}"
+							]
 						},
 						"description": "Busca uma consulta específica no histórico médico"
 					},
@@ -533,36 +800,64 @@
 			"description": "Consultas ao histórico médico via agendamento"
 		}
 	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{auth_token}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"requests": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
 	"variable": [
 		{
 			"key": "base_url",
-			"value": "http://localhost:8080",
-			"type": "string"
+			"value": "http://localhost:8080"
 		},
 		{
 			"key": "token",
-			"value": "",
-			"type": "string"
+			"value": ""
 		},
 		{
 			"key": "usuario_id",
-			"value": "850e8400-e29b-41d4-a716-446655440001",
-			"type": "string"
+			"value": "850e8400-e29b-41d4-a716-446655440001"
 		},
 		{
 			"key": "paciente_id",
-			"value": "850e8400-e29b-41d4-a716-446655440004",
-			"type": "string"
+			"value": "850e8400-e29b-41d4-a716-446655440004"
 		},
 		{
 			"key": "consulta_id",
-			"value": "b386bc0f-dd9a-47be-8b25-5078f69e4e12",
-			"type": "string"
+			"value": "b386bc0f-dd9a-47be-8b25-5078f69e4e12"
 		},
 		{
 			"key": "especialidade_id",
-			"value": "750e8400-e29b-41d4-a716-446655440001",
-			"type": "string"
+			"value": "750e8400-e29b-41d4-a716-446655440001"
 		}
 	]
 }
