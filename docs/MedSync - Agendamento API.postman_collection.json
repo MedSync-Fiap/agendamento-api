@@ -75,7 +75,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"nome\": \"Dr. João Silva\",\n  \"email\": \"joao.silva@medsync.com\",\n  \"senha\": \"senha123\",\n  \"cpf\": \"12345678901\",\n  \"dataNascimento\": \"1980-05-15\",\n  \"roleId\": \"550e8400-e29b-41d4-a716-446655440002\"\n}"
+							"raw": "{\n  \"nome\": \"Dr. Luan Silva\",\n  \"email\": \"luan.silva@medsync.com\",\n  \"senha\": \"senha123\",\n  \"cpf\": \"22245678901\",\n  \"dataNascimento\": \"1980-05-15\",\n  \"roleId\": \"550e8400-e29b-41d4-a716-446655440002\"\n}"
 						},
 						"url": {
 							"raw": "{{base_url}}/usuarios",

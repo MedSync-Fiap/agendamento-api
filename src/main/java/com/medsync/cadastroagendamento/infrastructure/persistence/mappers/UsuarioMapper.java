@@ -1,8 +1,6 @@
 package com.medsync.cadastroagendamento.infrastructure.persistence.mappers;
 
-import com.medsync.cadastroagendamento.domain.entities.Role;
 import com.medsync.cadastroagendamento.domain.entities.Usuario;
-import com.medsync.cadastroagendamento.infrastructure.persistence.entities.RoleJpaEntity;
 import com.medsync.cadastroagendamento.infrastructure.persistence.entities.UsuarioJpaEntity;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -14,5 +12,6 @@ public interface UsuarioMapper {
     Usuario toDomain(UsuarioJpaEntity jpaEntity);
     
     @Mapping(target = "role", source = "role")
+    @Mapping(target = "roleId", source = "role.id")
     UsuarioJpaEntity toJpa(Usuario domain);
 }
