@@ -11,3 +11,4 @@ public interface TelefoneGateway {
     void deletar(UUID telefoneId);
     void deletarPorUsuarioId(UUID usuarioId);
 }
+

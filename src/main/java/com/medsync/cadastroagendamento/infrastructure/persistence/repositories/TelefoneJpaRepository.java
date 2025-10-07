@@ -18,3 +18,4 @@ public interface TelefoneJpaRepository extends JpaRepository<TelefoneJpaEntity, 
     @Query("DELETE FROM TelefoneJpaEntity t WHERE t.usuario.id = :usuarioId")
     void deleteByUsuarioId(@Param("usuarioId") UUID usuarioId);
 }
+
