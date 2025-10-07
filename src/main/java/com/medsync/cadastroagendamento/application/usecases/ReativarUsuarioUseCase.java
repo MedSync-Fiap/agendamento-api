@@ -10,31 +10,31 @@ import org.springframework.stereotype.Component;
 import java.util.UUID;
 
 @Component
-public class DeletarUsuarioUseCase {
+public class ReativarUsuarioUseCase {
     
-    private static final Logger log = LoggerFactory.getLogger(DeletarUsuarioUseCase.class);
+    private static final Logger log = LoggerFactory.getLogger(ReativarUsuarioUseCase.class);
     
     private final UsuarioGateway usuarioGateway;
     
-    public DeletarUsuarioUseCase(UsuarioGateway usuarioGateway) {
+    public ReativarUsuarioUseCase(UsuarioGateway usuarioGateway) {
         this.usuarioGateway = usuarioGateway;
     }
     
     public void executar(UUID id) {
         try {
-            // Verificar se o usuário existe (incluindo inativos para permitir reativação)
+            // Verificar se o usuário existe (incluindo inativos)
             if (!usuarioGateway.buscarPorIdIncluindoInativos(id).isPresent()) {
                 throw UsuarioNotFoundException.byId(id);
             }
             
-            // Soft delete - marca como inativo ao invés de deletar fisicamente
-            usuarioGateway.deletar(id);
-            log.info("Usuário {} marcado como inativo (soft delete)", id);
+            // Reativar usuário
+            usuarioGateway.reativarUsuario(id);
+            log.info("Usuário {} reativado com sucesso", id);
         } catch (UsuarioNotFoundException e) {
             throw e; 
         } catch (Exception e) {
-            log.error("Erro ao deletar usuário {}: {}", id, e.getMessage(), e);
-            throw new DatabaseException("Falha ao deletar usuário no banco de dados", e);
+            log.error("Erro ao reativar usuário {}: {}", id, e.getMessage(), e);
+            throw new DatabaseException("Falha ao reativar usuário no banco de dados", e);
         }
     }
 }

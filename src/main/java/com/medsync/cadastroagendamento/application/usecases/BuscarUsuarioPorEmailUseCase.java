@@ -1,6 +1,6 @@
 package com.medsync.cadastroagendamento.application.usecases;
 
-import com.medsync.cadastroagendamento.application.exceptions.UsuarioNaoEncontradoException;
+import com.medsync.cadastroagendamento.domain.exception.UsuarioNotFoundException;
 import com.medsync.cadastroagendamento.domain.entities.Usuario;
 import com.medsync.cadastroagendamento.domain.gateways.UsuarioGateway;
 import org.springframework.stereotype.Component;
@@ -16,6 +16,6 @@ public class BuscarUsuarioPorEmailUseCase {
     
     public Usuario executar(String email) {
         return usuarioGateway.buscarPorEmail(email)
-                .orElseThrow(() -> new UsuarioNaoEncontradoException("email", email));
+                .orElseThrow(() -> UsuarioNotFoundException.byEmail(email));
     }
 }

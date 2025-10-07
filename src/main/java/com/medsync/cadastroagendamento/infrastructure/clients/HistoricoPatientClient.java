@@ -3,6 +3,9 @@ package com.medsync.cadastroagendamento.infrastructure.clients;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.medsync.cadastroagendamento.application.dto.M2MJwt;
 import com.medsync.cadastroagendamento.application.service.M2MJwtGeneratorService;
+import com.medsync.cadastroagendamento.domain.exception.GraphQLCommunicationException;
+import com.medsync.cadastroagendamento.domain.exception.JwtException;
+import com.medsync.cadastroagendamento.domain.exception.PacienteNotFoundException;
 import com.medsync.cadastroagendamento.presentation.dto.AtualizarPacienteRequest;
 import com.medsync.cadastroagendamento.presentation.dto.CriarPacienteRequest;
 import org.slf4j.Logger;
@@ -28,62 +31,28 @@ public class HistoricoPatientClient {
     private final RestTemplate restTemplate;
     private final M2MJwtGeneratorService jwtGeneratorService;
     
-    @Autowired
-    private ObjectMapper objectMapper;
+    private final ObjectMapper objectMapper;
     
     @Value("${app.historico.graphql.url:http://localhost:8081/graphql}")
     private String historicoGraphQLUrl;
     
-    public HistoricoPatientClient(RestTemplate restTemplate, M2MJwtGeneratorService jwtGeneratorService) {
+    public HistoricoPatientClient(RestTemplate restTemplate, M2MJwtGeneratorService jwtGeneratorService, ObjectMapper objectMapper) {
         this.restTemplate = restTemplate;
         this.jwtGeneratorService = jwtGeneratorService;
+        this.objectMapper = objectMapper;
     }
     
-    /**
-     * Busca dados de um paciente no histórico
-     */
-    public Map<String, Object> buscarPaciente(UUID pacienteId) {
+    public Map<String, Object> buscarPacientePorCpf(String cpf) {
         try {
-            String query = buildBuscarPacienteQuery(pacienteId);
+            String query = buildBuscarPacientePorCpfQuery(cpf);
             return executeGraphQLQuery(query);
             
         } catch (Exception e) {
-            logger.error("Erro ao buscar paciente {} no histórico", pacienteId, e);
-            throw new RuntimeException("Falha ao buscar dados do paciente no histórico", e);
+            logger.error("Erro ao buscar paciente por CPF {} no histórico", cpf, e);
+            throw new PacienteNotFoundException("Paciente não encontrado com CPF: " + cpf, cpf);
         }
     }
     
-    /**
-     * Busca histórico médico completo de um paciente
-     */
-    public Map<String, Object> buscarHistoricoCompleto(UUID pacienteId) {
-        try {
-            String query = buildBuscarHistoricoCompletoQuery(pacienteId);
-            return executeGraphQLQuery(query);
-            
-        } catch (Exception e) {
-            logger.error("Erro ao buscar histórico completo do paciente {}", pacienteId, e);
-            throw new RuntimeException("Falha ao buscar histórico médico do paciente", e);
-        }
-    }
-    
-    /**
-     * Busca uma consulta específica no histórico
-     */
-    public Map<String, Object> buscarConsulta(UUID consultaId, UUID pacienteId) {
-        try {
-            String query = buildBuscarConsultaQuery(consultaId, pacienteId);
-            return executeGraphQLQuery(query);
-            
-        } catch (Exception e) {
-            logger.error("Erro ao buscar consulta {} no histórico", consultaId, e);
-            throw new RuntimeException("Falha ao buscar consulta no histórico", e);
-        }
-    }
-    
-    /**
-     * Cria um novo paciente no histórico
-     */
     public Map<String, Object> criarPaciente(CriarPacienteRequest request) {
         try {
             String mutation = buildCriarPacienteMutation(request);
@@ -91,36 +60,110 @@ public class HistoricoPatientClient {
             
         } catch (Exception e) {
             logger.error("Erro ao criar paciente no histórico", e);
-            throw new RuntimeException("Falha ao criar paciente no histórico", e);
+            throw new GraphQLCommunicationException("Falha ao criar paciente no histórico", e);
         }
     }
     
-    /**
-     * Atualiza dados de um paciente no histórico
-     */
+    public Map<String, Object> buscarPaciente(UUID pacienteId) {
+        try {
+            String query = buildBuscarPacienteQuery(pacienteId);
+            return executeGraphQLQuery(query);
+            
+        } catch (Exception e) {
+            logger.error("Erro ao buscar paciente {} no histórico", pacienteId, e);
+            throw new PacienteNotFoundException("Paciente não encontrado com ID: " + pacienteId, pacienteId);
+        }
+    }
+    
+    public Map<String, Object> buscarHistoricoCompleto(UUID pacienteId) {
+        try {
+            String query = buildBuscarHistoricoCompletoQuery(pacienteId);
+            return executeGraphQLQuery(query);
+            
+        } catch (Exception e) {
+            logger.error("Erro ao buscar histórico completo do paciente {}", pacienteId, e);
+            throw new PacienteNotFoundException("Paciente não encontrado com ID: " + pacienteId, pacienteId);
+        }
+    }
+    
+    public Map<String, Object> buscarConsulta(UUID consultaId, UUID pacienteId) {
+        try {
+            String query = buildBuscarConsultaQuery(consultaId, pacienteId);
+            return executeGraphQLQuery(query);
+            
+        } catch (Exception e) {
+            logger.error("Erro ao buscar consulta {} no histórico", consultaId, e);
+            throw new PacienteNotFoundException("Consulta não encontrada para o paciente: " + pacienteId, pacienteId);
+        }
+    }
+    
+    
     public Map<String, Object> atualizarPaciente(UUID pacienteId, AtualizarPacienteRequest request) {
         try {
             String mutation = buildAtualizarPacienteMutation(pacienteId, request);
             return executeGraphQLMutation(mutation);
             
+        } catch (GraphQLCommunicationException e) {
+            throw e; // Re-lança exceção específica de comunicação
         } catch (Exception e) {
             logger.error("Erro ao atualizar paciente {} no histórico", pacienteId, e);
-            throw new RuntimeException("Falha ao atualizar paciente no histórico", e);
+            throw new GraphQLCommunicationException("Falha ao atualizar paciente no histórico", e);
         }
     }
     
-    /**
-     * Exclui um paciente do histórico (soft delete)
-     */
     public void excluirPaciente(UUID pacienteId) {
         try {
             String mutation = buildExcluirPacienteMutation(pacienteId);
             executeGraphQLMutation(mutation);
             
+        } catch (GraphQLCommunicationException e) {
+            throw e; // Re-lança exceção específica de comunicação
         } catch (Exception e) {
             logger.error("Erro ao excluir paciente {} no histórico", pacienteId, e);
-            throw new RuntimeException("Falha ao excluir paciente no histórico", e);
+            throw new GraphQLCommunicationException("Falha ao excluir paciente no histórico", e);
         }
+    }
+    
+    public Map<String, Object> inativarPaciente(UUID pacienteId) {
+        try {
+            String mutation = buildInativarPacienteMutation(pacienteId);
+            return executeGraphQLMutation(mutation);
+
+        } catch (GraphQLCommunicationException e) {
+            throw e; // Re-lança exceção específica de comunicação
+        } catch (Exception e) {
+            logger.error("Erro ao inativar paciente {} no histórico", pacienteId, e);
+            throw new GraphQLCommunicationException("Falha ao inativar paciente no histórico", e);
+        }
+    }
+    
+    public Map<String, Object> reativarPaciente(UUID pacienteId) {
+        try {
+            String mutation = buildReativarPacienteMutation(pacienteId);
+            return executeGraphQLMutation(mutation);
+
+        } catch (GraphQLCommunicationException e) {
+            throw e; // Re-lança exceção específica de comunicação
+        } catch (Exception e) {
+            logger.error("Erro ao reativar paciente {} no histórico", pacienteId, e);
+            throw new GraphQLCommunicationException("Falha ao reativar paciente no histórico", e);
+        }
+    }
+    
+    private String buildBuscarPacientePorCpfQuery(String cpf) {
+        return String.format("""
+            query {
+                getMedicalHistoryByPatientCpf(patientCpf: "%s") {
+                    patient {
+                        id
+                        name
+                        cpf
+                        email
+                        dateOfBirth
+                    }
+                }
+            }
+            """, cpf);
     }
     
     private String buildBuscarPacienteQuery(UUID pacienteId) {
@@ -190,69 +233,239 @@ public class HistoricoPatientClient {
             """, consultaId, pacienteId);
     }
     
-    private String buildCriarPacienteMutation(CriarPacienteRequest request) {
-        return String.format("""
-            mutation CriarPaciente {
-                criarPaciente(input: {
-                    nome: "%s"
-                    email: "%s"
-                    cpf: "%s"
-                    dataNascimento: "%s"
-                    observacoes: "%s"
-                }) {
-                    id
-                    nome
-                    email
-                    cpf
-                    dataNascimento
-                }
-            }
-            """,
-            request.nome(),
-            request.email(),
-            request.cpf(),
-            request.dataNascimento().format(DateTimeFormatter.ISO_LOCAL_DATE),
-            request.observacoes() != null ? request.observacoes() : ""
-        );
-    }
     
     private String buildAtualizarPacienteMutation(UUID pacienteId, AtualizarPacienteRequest request) {
+        // A API de histórico não tem mutation específica para atualizar pacientes
+        // Vamos usar updateAppointment para atualizar dados do paciente
+        String consultaId = UUID.randomUUID().toString();
+        String timestamp = java.time.LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        
         return String.format("""
-            mutation AtualizarPaciente {
-                atualizarPaciente(input: {
-                    id: "%s"
-                    nome: "%s"
-                    email: "%s"
-                    cpf: "%s"
-                    dataNascimento: "%s"
-                    observacoes: "%s"
+            mutation UpdateAppointment {
+                updateAppointment(updateAppointmentInput: {
+                    consultaId: "%s"
+                    dataHora: "%s"
+                    status: "ATUALIZADO"
+                    observacoes: "Dados do paciente atualizados"
+                    tipoEvento: "EDITION"
+                    timestamp: "%s"
+                    
+                    # Dados do paciente atualizados
+                    pacienteId: "%s"
+                    pacienteNome: "%s"
+                    pacienteCpf: "%s"
+                    pacienteEmail: "%s"
+                    pacienteDataNascimento: "%s"
+                    
+                    # Dados do médico (dados fictícios para atualização)
+                    medicoId: "00000000-0000-0000-0000-000000000000"
+                    medicoNome: "Sistema"
+                    medicoCpf: "00000000000"
+                    medicoEmail: "sistema@medsync.com"
+                    medicoEspecialidade: "Sistema"
+                    
+                    # Dados do usuário (dados fictícios para atualização)
+                    usuarioId: "00000000-0000-0000-0000-000000000000"
+                    usuarioNome: "Sistema"
+                    usuarioEmail: "sistema@medsync.com"
+                    usuarioRole: "SISTEMA"
                 }) {
-                    id
-                    nome
+                    patient {
+                        id
+                        name
+                        cpf
                     email
-                    cpf
-                    dataNascimento
+                        dateOfBirth
+                    }
                 }
             }
             """,
-            pacienteId,
+            consultaId,
+            java.time.LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+            timestamp,
+            pacienteId.toString(),
             request.nome() != null ? request.nome() : "",
-            request.email() != null ? request.email() : "",
             request.cpf() != null ? request.cpf() : "",
-            request.dataNascimento() != null ? request.dataNascimento().format(DateTimeFormatter.ISO_LOCAL_DATE) : "",
-            request.observacoes() != null ? request.observacoes() : ""
+            request.email() != null ? request.email() : "",
+            request.dataNascimento() != null ? request.dataNascimento().format(DateTimeFormatter.ISO_LOCAL_DATE) : ""
         );
     }
     
     private String buildExcluirPacienteMutation(UUID pacienteId) {
+        // A API de histórico não tem mutation específica para excluir pacientes
+        // Vamos usar updateAppointment para marcar como cancelado
+        String consultaId = UUID.randomUUID().toString();
+        String timestamp = java.time.LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        
         return String.format("""
-            mutation ExcluirPaciente {
-                excluirPaciente(id: "%s") {
-                    id
-                    ativo
+            mutation UpdateAppointment {
+                updateAppointment(updateAppointmentInput: {
+                    consultaId: "%s"
+                    dataHora: "%s"
+                    status: "CANCELADA"
+                    observacoes: "Paciente removido do sistema"
+                    tipoEvento: "CANCELLATION"
+                    timestamp: "%s"
+                    
+                    # Dados do paciente
+                    pacienteId: "%s"
+                    pacienteNome: "Paciente Removido"
+                    pacienteCpf: "00000000000"
+                    pacienteEmail: "removido@medsync.com"
+                    pacienteDataNascimento: "1900-01-01"
+                    
+                    # Dados do médico (dados fictícios para cancelamento)
+                    medicoId: "00000000-0000-0000-0000-000000000000"
+                    medicoNome: "Sistema"
+                    medicoCpf: "00000000000"
+                    medicoEmail: "sistema@medsync.com"
+                    medicoEspecialidade: "Sistema"
+                    
+                    # Dados do usuário (dados fictícios para cancelamento)
+                    usuarioId: "00000000-0000-0000-0000-000000000000"
+                    usuarioNome: "Sistema"
+                    usuarioEmail: "sistema@medsync.com"
+                    usuarioRole: "SISTEMA"
+                }) {
+                    patient {
+                        id
+                        name
+                    }
                 }
             }
-            """, pacienteId);
+            """,
+            consultaId,
+            java.time.LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+            timestamp,
+            pacienteId.toString()
+        );
+    }
+    
+    private String buildInativarPacienteMutation(UUID pacienteId) {
+        String consultaId = UUID.randomUUID().toString();
+        String timestamp = java.time.LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+
+        return String.format("""
+            mutation UpdateAppointment {
+                updateAppointment(updateAppointmentInput: {
+                    consultaId: "%s"
+                    dataHora: "%s"
+                    status: "INATIVO"
+                    observacoes: "Paciente inativado no sistema"
+                    tipoEvento: "INACTIVATION"
+                    timestamp: "%s"
+
+                    # Dados do paciente
+                    pacienteId: "%s"
+                    pacienteNome: "Paciente Inativo"
+                    pacienteCpf: "00000000000"
+                    pacienteEmail: "inativo@medsync.com"
+                    pacienteDataNascimento: "1900-01-01"
+
+                    # Dados do médico (dados fictícios para inativação)
+                    medicoId: "00000000-0000-0000-0000-000000000000"
+                    medicoNome: "Sistema"
+                    medicoCpf: "00000000000"
+                    medicoEmail: "sistema@medsync.com"
+                    medicoEspecialidade: "Sistema"
+
+                    # Dados do usuário (dados fictícios para inativação)
+                    usuarioId: "00000000-0000-0000-0000-000000000000"
+                    usuarioNome: "Sistema"
+                    usuarioEmail: "sistema@medsync.com"
+                    usuarioRole: "SISTEMA"
+                }) {
+                    patient {
+                        id
+                        name
+                        status
+                    }
+                }
+            }
+            """,
+            consultaId,
+            java.time.LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+            timestamp,
+            pacienteId.toString()
+        );
+    }
+    
+    private String buildReativarPacienteMutation(UUID pacienteId) {
+        String consultaId = UUID.randomUUID().toString();
+        String timestamp = java.time.LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+
+        return String.format("""
+            mutation UpdateAppointment {
+                updateAppointment(updateAppointmentInput: {
+                    consultaId: "%s"
+                    dataHora: "%s"
+                    status: "ATIVO"
+                    observacoes: "Paciente reativado no sistema"
+                    tipoEvento: "REACTIVATION"
+                    timestamp: "%s"
+
+                    # Dados do paciente
+                    pacienteId: "%s"
+                    pacienteNome: "Paciente Reativado"
+                    pacienteCpf: "00000000000"
+                    pacienteEmail: "reativado@medsync.com"
+                    pacienteDataNascimento: "1900-01-01"
+
+                    # Dados do médico (dados fictícios para reativação)
+                    medicoId: "00000000-0000-0000-0000-000000000000"
+                    medicoNome: "Sistema"
+                    medicoCpf: "00000000000"
+                    medicoEmail: "sistema@medsync.com"
+                    medicoEspecialidade: "Sistema"
+
+                    # Dados do usuário (dados fictícios para reativação)
+                    usuarioId: "00000000-0000-0000-0000-000000000000"
+                    usuarioNome: "Sistema"
+                    usuarioEmail: "sistema@medsync.com"
+                    usuarioRole: "SISTEMA"
+                }) {
+                    patient {
+                        id
+                        name
+                        status
+                    }
+                }
+            }
+            """,
+            consultaId,
+            java.time.LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+            timestamp,
+            pacienteId.toString()
+        );
+    }
+    
+    private String buildCriarPacienteMutation(CriarPacienteRequest request) {
+        return String.format("""
+            mutation CriarPaciente {
+                createPatient(patientInput: {
+                    nome: "%s"
+                    cpf: "%s"
+                    email: "%s"
+                    dataNascimento: "%s"
+                    observacoes: "%s"
+                }) {
+                    id
+                    nome
+                    cpf
+                    email
+                    dataNascimento
+                    observacoes
+                    ativo
+                    criadoEm
+                }
+            }
+            """,
+            request.nome(),
+            request.cpf(),
+            request.email(),
+            request.dataNascimento().format(DateTimeFormatter.ISO_LOCAL_DATE),
+            request.observacoes() != null ? request.observacoes() : ""
+        );
     }
     
     private Map<String, Object> executeGraphQLQuery(String query) {
@@ -272,19 +485,51 @@ public class HistoricoPatientClient {
             
             logger.debug("Resposta do GraphQL: {}", response);
             
-            // Parse da resposta JSON
-            return objectMapper.readValue(response, Map.class);
+            Map<String, Object> fullResponse = objectMapper.readValue(response, Map.class);
             
+            if (fullResponse.containsKey("errors")) {
+                logger.error("Erro do GraphQL: {}", fullResponse.get("errors"));
+                throw new GraphQLCommunicationException("Erro ao executar query no histórico: " + fullResponse.get("errors"));
+            }
+            
+            @SuppressWarnings("unchecked")
+            Map<String, Object> data = (Map<String, Object>) fullResponse.get("data");
+            if (data == null) {
+                throw new GraphQLCommunicationException("Resposta GraphQL não contém dados");
+            }
+            
+            @SuppressWarnings("unchecked")
+            Map<String, Object> result = (Map<String, Object>) data.values().iterator().next();
+            
+            // Para queries de histórico médico, retornar o objeto completo (patient + appointments)
+            // Para outras queries, extrair apenas o patient se existir wrapper
+            if (result.containsKey("patient") && result.containsKey("appointments")) {
+                // É uma resposta de histórico médico completo - retornar tudo
+                return result;
+            } else if (result.containsKey("patient")) {
+                // É uma resposta com wrapper patient - extrair apenas o patient
+                @SuppressWarnings("unchecked")
+                Map<String, Object> patientData = (Map<String, Object>) result.get("patient");
+                return patientData;
+            }
+            
+            return result;
+            
+        } catch (GraphQLCommunicationException e) {
+            throw e;
         } catch (Exception e) {
             logger.error("Erro ao executar query GraphQL", e);
-            throw new RuntimeException("Falha na comunicação com serviço de histórico", e);
+            throw new GraphQLCommunicationException("Falha na comunicação com serviço de histórico", e);
         }
     }
     
     private Map<String, Object> executeGraphQLMutation(String mutation) {
         try {
+            M2MJwt jwt = jwtGeneratorService.getTokenHistorico();
+
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setBearerAuth(jwt.token());
             
             Map<String, String> requestBody = new HashMap<>();
             requestBody.put("query", mutation);
@@ -295,20 +540,36 @@ public class HistoricoPatientClient {
             
             logger.debug("Resposta do GraphQL: {}", response);
             
-            // Parse da resposta JSON
-            Map<String, Object> result = objectMapper.readValue(response, Map.class);
+            Map<String, Object> fullResponse = objectMapper.readValue(response, Map.class);
             
-            // Verificar se houve erros na resposta
-            if (result.containsKey("errors")) {
-                logger.error("Erro do GraphQL: {}", result.get("errors"));
-                throw new RuntimeException("Erro ao executar mutation no histórico: " + result.get("errors"));
+            if (fullResponse.containsKey("errors")) {
+                logger.error("Erro do GraphQL: {}", fullResponse.get("errors"));
+                throw new GraphQLCommunicationException("Erro ao executar mutation no histórico: " + fullResponse.get("errors"));
+            }
+            
+            @SuppressWarnings("unchecked")
+            Map<String, Object> data = (Map<String, Object>) fullResponse.get("data");
+            if (data == null) {
+                throw new GraphQLCommunicationException("Resposta GraphQL não contém dados");
+            }
+            
+            @SuppressWarnings("unchecked")
+            Map<String, Object> result = (Map<String, Object>) data.values().iterator().next();
+            
+            // Extrair o conteúdo do wrapper 'patient' se existir
+            if (result.containsKey("patient")) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> patientData = (Map<String, Object>) result.get("patient");
+                return patientData;
             }
             
             return result;
             
+        } catch (GraphQLCommunicationException e) {
+            throw e;
         } catch (Exception e) {
             logger.error("Erro ao executar mutation GraphQL", e);
-            throw new RuntimeException("Falha na comunicação com serviço de histórico", e);
+            throw new GraphQLCommunicationException("Falha na comunicação com serviço de histórico", e);
         }
     }
 }

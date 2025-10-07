@@ -5,6 +5,8 @@ import com.medsync.cadastroagendamento.application.usecases.BuscarUsuariosPorRol
 import com.medsync.cadastroagendamento.application.usecases.CriarUsuarioUseCase;
 import com.medsync.cadastroagendamento.application.usecases.DeletarUsuarioUseCase;
 import com.medsync.cadastroagendamento.application.usecases.ListarUsuariosUseCase;
+import com.medsync.cadastroagendamento.application.usecases.ListarUsuariosInativosUseCase;
+import com.medsync.cadastroagendamento.application.usecases.ReativarUsuarioUseCase;
 import com.medsync.cadastroagendamento.domain.entities.Usuario;
 import com.medsync.cadastroagendamento.presentation.dto.AtualizarUsuarioRequest;
 import com.medsync.cadastroagendamento.presentation.dto.CriarUsuarioRequest;
@@ -15,6 +17,8 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -28,22 +32,30 @@ import java.util.UUID;
 @Tag(name = "Usuários", description = "API para gerenciamento de usuários")
 public class UsuarioController {
 
+    private static final Logger log = LoggerFactory.getLogger(UsuarioController.class);
+
     private final CriarUsuarioUseCase criarUsuarioUseCase;
     private final ListarUsuariosUseCase listarUsuariosUseCase;
     private final AtualizarUsuarioUseCase atualizarUsuarioUseCase;
     private final DeletarUsuarioUseCase deletarUsuarioUseCase;
     private final BuscarUsuariosPorRoleUseCase buscarUsuariosPorRoleUseCase;
+    private final ListarUsuariosInativosUseCase listarUsuariosInativosUseCase;
+    private final ReativarUsuarioUseCase reativarUsuarioUseCase;
 
     public UsuarioController(CriarUsuarioUseCase criarUsuarioUseCase,
                             ListarUsuariosUseCase listarUsuariosUseCase,
                             AtualizarUsuarioUseCase atualizarUsuarioUseCase,
                             DeletarUsuarioUseCase deletarUsuarioUseCase,
-                            BuscarUsuariosPorRoleUseCase buscarUsuariosPorRoleUseCase) {
+                            BuscarUsuariosPorRoleUseCase buscarUsuariosPorRoleUseCase,
+                            ListarUsuariosInativosUseCase listarUsuariosInativosUseCase,
+                            ReativarUsuarioUseCase reativarUsuarioUseCase) {
         this.criarUsuarioUseCase = criarUsuarioUseCase;
         this.listarUsuariosUseCase = listarUsuariosUseCase;
         this.atualizarUsuarioUseCase = atualizarUsuarioUseCase;
         this.deletarUsuarioUseCase = deletarUsuarioUseCase;
         this.buscarUsuariosPorRoleUseCase = buscarUsuariosPorRoleUseCase;
+        this.listarUsuariosInativosUseCase = listarUsuariosInativosUseCase;
+        this.reativarUsuarioUseCase = reativarUsuarioUseCase;
     }
 
     @PostMapping
@@ -56,9 +68,14 @@ public class UsuarioController {
             @ApiResponse(responseCode = "403", description = "Acesso negado - permissão necessária: CRIAR_USUARIO")
     })
     public ResponseEntity<UsuarioResponse> criarUsuario(@Valid @RequestBody CriarUsuarioRequest request) {
-        Usuario usuario = criarUsuarioUseCase.executar(request);
-        UsuarioResponse response = UsuarioResponse.fromDomain(usuario);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        try {
+            Usuario usuario = criarUsuarioUseCase.executar(request);
+            UsuarioResponse response = UsuarioResponse.fromDomain(usuario);
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        } catch (Exception e) {
+            log.error("Erro ao criar usuário: {}", e.getMessage(), e);
+            throw e; // Deixa o GlobalExceptionHandler tratar
+        }
     }
 
     @GetMapping
@@ -70,74 +87,16 @@ public class UsuarioController {
             @ApiResponse(responseCode = "403", description = "Acesso negado - permissão necessária: VISUALIZAR_USUARIOS")
     })
     public ResponseEntity<List<UsuarioResponse>> listarUsuarios() {
-        List<Usuario> usuarios = listarUsuariosUseCase.executar();
-        List<UsuarioResponse> responses = usuarios.stream()
-                .map(UsuarioResponse::fromDomain)
-                .toList();
-        return ResponseEntity.ok(responses);
-    }
-
-    @GetMapping("/{id}")
-    @PreAuthorize("hasAuthority('VISUALIZAR_USUARIOS')")
-    @Operation(summary = "Buscar usuário por ID", description = "Busca um usuário específico pelo ID")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Usuário encontrado"),
-            @ApiResponse(responseCode = "404", description = "Usuário não encontrado"),
-            @ApiResponse(responseCode = "403", description = "Acesso negado - permissão necessária: VISUALIZAR_USUARIOS")
-    })
-    public ResponseEntity<UsuarioResponse> buscarUsuarioPorId(
-            @Parameter(description = "ID do usuário") @PathVariable UUID id) {
-        Usuario usuario = listarUsuariosUseCase.buscarPorId(id);
-        UsuarioResponse response = UsuarioResponse.fromDomain(usuario);
-        return ResponseEntity.ok(response);
-    }
-
-    @GetMapping("/medicos")
-    @PreAuthorize("hasAuthority('VISUALIZAR_USUARIOS')")
-    @Operation(summary = "Listar médicos", description = "Lista todos os médicos do sistema")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Lista de médicos retornada com sucesso"),
-            @ApiResponse(responseCode = "500", description = "Erro interno do servidor"),
-            @ApiResponse(responseCode = "403", description = "Acesso negado - permissão necessária: VISUALIZAR_USUARIOS")
-    })
-    public ResponseEntity<List<UsuarioResponse>> listarMedicos() {
-        List<Usuario> usuarios = buscarUsuariosPorRoleUseCase.executar("MEDICO");
-        List<UsuarioResponse> responses = usuarios.stream()
-                .map(UsuarioResponse::fromDomain)
-                .toList();
-        return ResponseEntity.ok(responses);
-    }
-
-    @GetMapping("/pacientes")
-    @PreAuthorize("hasAuthority('VISUALIZAR_USUARIOS')")
-    @Operation(summary = "Listar pacientes", description = "Lista todos os pacientes do sistema")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Lista de pacientes retornada com sucesso"),
-            @ApiResponse(responseCode = "500", description = "Erro interno do servidor"),
-            @ApiResponse(responseCode = "403", description = "Acesso negado - permissão necessária: VISUALIZAR_USUARIOS")
-    })
-    public ResponseEntity<List<UsuarioResponse>> listarPacientes() {
-        List<Usuario> usuarios = buscarUsuariosPorRoleUseCase.executar("PACIENTE");
-        List<UsuarioResponse> responses = usuarios.stream()
-                .map(UsuarioResponse::fromDomain)
-                .toList();
-        return ResponseEntity.ok(responses);
-    }
-
-    @GetMapping("/enfermeiros")
-    @PreAuthorize("hasAuthority('VISUALIZAR_USUARIOS')")
-    @Operation(summary = "Listar enfermeiros", description = "Lista todos os enfermeiros do sistema")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Lista de enfermeiros retornada com sucesso"),
-            @ApiResponse(responseCode = "500", description = "Erro interno do servidor"),
-            @ApiResponse(responseCode = "403", description = "Acesso negado - permissão necessária: VISUALIZAR_USUARIOS")
-    })
-    public ResponseEntity<List<UsuarioResponse>> listarEnfermeiros() {
-        List<Usuario> usuarios = buscarUsuariosPorRoleUseCase.executar("ENFERMEIRO");
-        List<UsuarioResponse> responses = usuarios.stream()
-                .map(UsuarioResponse::fromDomain)
-                .toList();
-        return ResponseEntity.ok(responses);
+        try {
+            List<Usuario> usuarios = listarUsuariosUseCase.executar();
+            List<UsuarioResponse> responses = usuarios.stream()
+                    .map(UsuarioResponse::fromDomain)
+                    .toList();
+            return ResponseEntity.ok(responses);
+        } catch (Exception e) {
+            log.error("Erro ao listar usuários: {}", e.getMessage(), e);
+            throw e; // Deixa o GlobalExceptionHandler tratar
+        }
     }
 
     @GetMapping("/role/{role}")
@@ -155,6 +114,26 @@ public class UsuarioController {
                 .map(UsuarioResponse::fromDomain)
                 .toList();
         return ResponseEntity.ok(responses);
+    }
+
+    @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority('VISUALIZAR_USUARIOS')")
+    @Operation(summary = "Buscar usuário por ID", description = "Busca um usuário específico pelo ID")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Usuário encontrado"),
+            @ApiResponse(responseCode = "404", description = "Usuário não encontrado"),
+            @ApiResponse(responseCode = "403", description = "Acesso negado - permissão necessária: VISUALIZAR_USUARIOS")
+    })
+    public ResponseEntity<UsuarioResponse> buscarUsuarioPorId(
+            @Parameter(description = "ID do usuário") @PathVariable UUID id) {
+        try {
+            Usuario usuario = listarUsuariosUseCase.buscarPorId(id);
+            UsuarioResponse response = UsuarioResponse.fromDomain(usuario);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Erro ao buscar usuário por ID {}: {}", id, e.getMessage(), e);
+            throw e; // Deixa o GlobalExceptionHandler tratar
+        }
     }
 
     @PutMapping("/{id}")
@@ -177,7 +156,7 @@ public class UsuarioController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('EXCLUIR_USUARIO')")
-    @Operation(summary = "Deletar usuário", description = "Remove um usuário do sistema")
+    @Operation(summary = "Deletar usuário", description = "Remove um usuário do sistema (soft delete)")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Usuário deletado com sucesso"),
             @ApiResponse(responseCode = "404", description = "Usuário não encontrado"),
@@ -187,5 +166,47 @@ public class UsuarioController {
             @Parameter(description = "ID do usuário") @PathVariable UUID id) {
         deletarUsuarioUseCase.executar(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/inativos")
+    @PreAuthorize("hasAuthority('VISUALIZAR_USUARIOS')")
+    @Operation(summary = "Listar usuários inativos", description = "Lista todos os usuários inativos do sistema")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Lista de usuários inativos retornada com sucesso"),
+            @ApiResponse(responseCode = "500", description = "Erro interno do servidor"),
+            @ApiResponse(responseCode = "403", description = "Acesso negado - permissão necessária: VISUALIZAR_USUARIOS")
+    })
+    public ResponseEntity<List<UsuarioResponse>> listarUsuariosInativos() {
+        try {
+            List<Usuario> usuarios = listarUsuariosInativosUseCase.executar();
+            List<UsuarioResponse> responses = usuarios.stream()
+                    .map(UsuarioResponse::fromDomain)
+                    .toList();
+            return ResponseEntity.ok(responses);
+        } catch (Exception e) {
+            log.error("Erro ao listar usuários inativos: {}", e.getMessage(), e);
+            throw e; // Deixa o GlobalExceptionHandler tratar
+        }
+    }
+
+    @PutMapping("/{id}/reativar")
+    @PreAuthorize("hasAuthority('EDITAR_USUARIO')")
+    @Operation(summary = "Reativar usuário", description = "Reativa um usuário que foi deletado (soft delete)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Usuário reativado com sucesso"),
+            @ApiResponse(responseCode = "404", description = "Usuário não encontrado"),
+            @ApiResponse(responseCode = "403", description = "Acesso negado - permissão necessária: EDITAR_USUARIO")
+    })
+    public ResponseEntity<UsuarioResponse> reativarUsuario(
+            @Parameter(description = "ID do usuário") @PathVariable UUID id) {
+        try {
+            reativarUsuarioUseCase.executar(id);
+            Usuario usuario = listarUsuariosUseCase.buscarPorId(id);
+            UsuarioResponse response = UsuarioResponse.fromDomain(usuario);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            log.error("Erro ao reativar usuário {}: {}", id, e.getMessage(), e);
+            throw e; // Deixa o GlobalExceptionHandler tratar
+        }
     }
 }

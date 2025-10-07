@@ -1,12 +1,15 @@
 package com.medsync.cadastroagendamento.application.usecases;
 
-import com.medsync.cadastroagendamento.application.exceptions.EmailJaExisteException;
-import com.medsync.cadastroagendamento.application.exceptions.UsuarioNaoEncontradoException;
+import com.medsync.cadastroagendamento.domain.exception.UsuarioAlreadyExistsException;
+import com.medsync.cadastroagendamento.domain.exception.UsuarioNotFoundException;
+import com.medsync.cadastroagendamento.domain.exception.DatabaseException;
 import com.medsync.cadastroagendamento.domain.entities.Role;
 import com.medsync.cadastroagendamento.domain.entities.Usuario;
 import com.medsync.cadastroagendamento.domain.gateways.RoleGateway;
 import com.medsync.cadastroagendamento.domain.gateways.UsuarioGateway;
 import com.medsync.cadastroagendamento.presentation.dto.AtualizarUsuarioRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
@@ -15,6 +18,8 @@ import java.util.UUID;
 
 @Component
 public class AtualizarUsuarioUseCase {
+    
+    private static final Logger log = LoggerFactory.getLogger(AtualizarUsuarioUseCase.class);
     
     private final UsuarioGateway usuarioGateway;
     private final RoleGateway roleGateway;
@@ -27,15 +32,22 @@ public class AtualizarUsuarioUseCase {
     }
     
     public Usuario executar(UUID id, AtualizarUsuarioRequest request) {
-        Usuario usuario = buscarUsuario(id);
-        atualizarCamposUsuario(usuario, request);
-        usuario.setAtualizadoEm(LocalDateTime.now());
-        return usuarioGateway.salvar(usuario);
+        try {
+            Usuario usuario = buscarUsuario(id);
+            atualizarCamposUsuario(usuario, request);
+            usuario.setAtualizadoEm(LocalDateTime.now());
+            return usuarioGateway.salvar(usuario);
+        } catch (UsuarioNotFoundException | UsuarioAlreadyExistsException e) {
+            throw e; 
+        } catch (Exception e) {
+            log.error("Erro ao atualizar usuário {}: {}", id, e.getMessage(), e);
+            throw new DatabaseException("Falha ao atualizar usuário no banco de dados", e);
+        }
     }
     
     private Usuario buscarUsuario(UUID id) {
         return usuarioGateway.buscarPorId(id)
-                .orElseThrow(() -> new UsuarioNaoEncontradoException(id));
+                .orElseThrow(() -> UsuarioNotFoundException.byId(id));
     }
     
     private void atualizarCamposUsuario(Usuario usuario, AtualizarUsuarioRequest request) {
@@ -53,15 +65,20 @@ public class AtualizarUsuarioUseCase {
         }
         
         if (request.roleId() != null) {
-            Role novaRole = roleGateway.buscarPorId(request.roleId())
-                    .orElseThrow(() -> new RuntimeException("Role não encontrada: " + request.roleId()));
-            usuario.setRole(novaRole);
+            try {
+                Role novaRole = roleGateway.buscarPorId(request.roleId())
+                        .orElseThrow(() -> new DatabaseException("Role não encontrada com ID: " + request.roleId(), request.roleId()));
+                usuario.setRole(novaRole);
+            } catch (Exception e) {
+                log.error("Erro ao buscar role com ID {}: {}", request.roleId(), e.getMessage(), e);
+                throw new DatabaseException("Falha ao buscar role no banco de dados", e);
+            }
         }
     }
     
     private void validarEmailNaoExiste(String email) {
         if (usuarioGateway.existePorEmail(email)) {
-            throw new EmailJaExisteException(email);
+            throw UsuarioAlreadyExistsException.byEmail(email);
         }
     }
 }

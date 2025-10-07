@@ -14,10 +14,13 @@ public interface UsuarioGateway {
     Usuario salvar(Usuario usuario);
     List<Usuario> buscarTodos();
     List<Usuario> buscarPorRole(UUID roleId);
-    List<Usuario> buscarMedicos();
-    List<Usuario> buscarPacientes();
     List<Usuario> buscarUsuariosPorRole(TipoRole role);
     void deletar(UUID id);
     boolean existePorEmail(String email);
     boolean existePorCpf(String cpf);
+    
+    // Métodos para soft delete
+    void reativarUsuario(UUID id);
+    List<Usuario> buscarUsuariosInativos();
+    Optional<Usuario> buscarPorIdIncluindoInativos(UUID id);
 }

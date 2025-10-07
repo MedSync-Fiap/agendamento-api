@@ -6,6 +6,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -46,15 +47,16 @@ public class UsuarioJpaEntity {
     @Column(name = "atualizado_em", nullable = false)
     private LocalDateTime atualizadoEm;
     
-    @OneToMany(cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JoinColumn(name = "usuario_id")
+    @OneToMany(mappedBy = "usuario", cascade = CascadeType.ALL, fetch = FetchType.LAZY, orphanRemoval = true)
     private List<TelefoneJpaEntity> telefones;
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "role_id", insertable = false, updatable = false)
     private RoleJpaEntity role;
     
-    public UsuarioJpaEntity() {}
+    public UsuarioJpaEntity() {
+        this.telefones = new ArrayList<>();
+    }
     
     public UsuarioJpaEntity(UUID id, String nome, String cpf, String email, String senhaHash, 
                            LocalDate dataNascimento, UUID roleId, boolean ativo, LocalDateTime criadoEm, LocalDateTime atualizadoEm) {
@@ -68,6 +70,7 @@ public class UsuarioJpaEntity {
         this.ativo = ativo;
         this.criadoEm = criadoEm;
         this.atualizadoEm = atualizadoEm;
+        this.telefones = new ArrayList<>();
     }
     
     public UUID getId() {
@@ -151,6 +154,9 @@ public class UsuarioJpaEntity {
     }
     
     public List<TelefoneJpaEntity> getTelefones() {
+        if (telefones == null) {
+            telefones = new ArrayList<>();
+        }
         return telefones;
     }
     

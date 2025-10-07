@@ -12,8 +12,6 @@ public class TelefoneJpaEntity {
     @Column(name = "id")
     private UUID id;
     
-    @Column(name = "usuario_id", nullable = false)
-    private UUID usuarioId;
     
     @Column(name = "numero", nullable = false)
     private String numero;
@@ -23,14 +21,13 @@ public class TelefoneJpaEntity {
     private TipoTelefone tipo;
     
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "usuario_id", insertable = false, updatable = false)
+    @JoinColumn(name = "usuario_id")
     private UsuarioJpaEntity usuario;
     
     public TelefoneJpaEntity() {}
     
-    public TelefoneJpaEntity(UUID id, UUID usuarioId, String numero, TipoTelefone tipo) {
+    public TelefoneJpaEntity(UUID id, String numero, TipoTelefone tipo) {
         this.id = id;
-        this.usuarioId = usuarioId;
         this.numero = numero;
         this.tipo = tipo;
     }
@@ -43,13 +40,6 @@ public class TelefoneJpaEntity {
         this.id = id;
     }
     
-    public UUID getUsuarioId() {
-        return usuarioId;
-    }
-    
-    public void setUsuarioId(UUID usuarioId) {
-        this.usuarioId = usuarioId;
-    }
     
     public String getNumero() {
         return numero;

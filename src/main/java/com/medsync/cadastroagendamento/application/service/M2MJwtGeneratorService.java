@@ -1,6 +1,10 @@
 package com.medsync.cadastroagendamento.application.service;
 
 import com.medsync.cadastroagendamento.application.dto.M2MJwt;
+import com.medsync.cadastroagendamento.domain.exception.JwtException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
@@ -15,6 +19,8 @@ import java.util.concurrent.atomic.AtomicReference;
 @Service
 public class M2MJwtGeneratorService {
 
+    private static final Logger log = LoggerFactory.getLogger(M2MJwtGeneratorService.class);
+    
     private final JwtEncoder jwtEncoder;
 
     @Value("${app.security.jwt.issuer}")
@@ -27,49 +33,52 @@ public class M2MJwtGeneratorService {
     private static final long EXPIRATION_IN_MINUTES = 30;
     private static final long REFRESH_BUFFER_IN_SECONDS = 60;
 
-    public M2MJwtGeneratorService(JwtEncoder jwtEncoder) {
+    public M2MJwtGeneratorService(@Qualifier("m2mJwtEncoder") JwtEncoder jwtEncoder) {
         this.jwtEncoder = jwtEncoder;
     }
-
-    /**
-     * Retorna um token JWT válido, reutilizando um token em cache se possível.
-     * Um novo token é gerado apenas se o token em cache não existir ou estiver
-     * prestes a expirar.
-     * @return O token JWT como uma String.
-     */
     public M2MJwt getTokenHistorico() {
-        M2MJwt currentJwt = cachedJwtRef.get();
+        try {
+            M2MJwt currentJwt = cachedJwtRef.get();
 
-        if (currentJwt != null && currentJwt.expiresAt().isAfter(Instant.now().plusSeconds(REFRESH_BUFFER_IN_SECONDS))) {
-            return currentJwt;
+            if (currentJwt != null && currentJwt.expiresAt().isAfter(Instant.now().plusSeconds(REFRESH_BUFFER_IN_SECONDS))) {
+                return currentJwt;
+            }
+
+            return generateToken();
+        } catch (Exception e) {
+            log.error("Erro ao obter token JWT para histórico", e);
+            throw new JwtException("Falha ao gerar token JWT para comunicação com histórico", e);
         }
-
-        return generateToken();
     }
 
     private synchronized M2MJwt generateToken() {
-        M2MJwt currentJwt = cachedJwtRef.get();
-        if (currentJwt != null && currentJwt.expiresAt().isAfter(Instant.now().plusSeconds(REFRESH_BUFFER_IN_SECONDS))) {
-            return currentJwt;
+        try {
+            M2MJwt currentJwt = cachedJwtRef.get();
+            if (currentJwt != null && currentJwt.expiresAt().isAfter(Instant.now().plusSeconds(REFRESH_BUFFER_IN_SECONDS))) {
+                return currentJwt;
+            }
+
+            Instant now = Instant.now();
+            Instant expiry = now.plus(EXPIRATION_IN_MINUTES, ChronoUnit.MINUTES);
+
+            JwtClaimsSet claims = JwtClaimsSet.builder()
+                    .issuer(issuer)
+                    .audience(Collections.singletonList(audience))
+                    .issuedAt(now)
+                    .expiresAt(expiry)
+                    .subject("m2m-agendamento-service")
+                    .build();
+
+            String newToken = this.jwtEncoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
+
+            M2MJwt newJwt = new M2MJwt(newToken, expiry);
+            this.cachedJwtRef.set(newJwt);
+
+            return newJwt;
+        } catch (Exception e) {
+            log.error("Erro ao gerar token JWT", e);
+            throw new JwtException("Falha ao gerar token JWT", e);
         }
-
-        Instant now = Instant.now();
-        Instant expiry = now.plus(EXPIRATION_IN_MINUTES, ChronoUnit.MINUTES);
-
-        JwtClaimsSet claims = JwtClaimsSet.builder()
-                .issuer(issuer)
-                .audience(Collections.singletonList(audience))
-                .issuedAt(now)
-                .expiresAt(expiry)
-                .subject("m2m-agendamento-service")
-                .build();
-
-        String newToken = this.jwtEncoder.encode(JwtEncoderParameters.from(claims)).getTokenValue();
-
-        M2MJwt newJwt = new M2MJwt(newToken, expiry);
-        this.cachedJwtRef.set(newJwt);
-
-        return newJwt;
     }
 
 }

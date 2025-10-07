@@ -5,6 +5,10 @@ import com.medsync.cadastroagendamento.application.dto.M2MJwt;
 import com.medsync.cadastroagendamento.application.service.M2MJwtGeneratorService;
 import com.medsync.cadastroagendamento.domain.entities.Especialidade;
 import com.medsync.cadastroagendamento.domain.entities.Usuario;
+import com.medsync.cadastroagendamento.domain.exception.EspecialidadeNotFoundException;
+import com.medsync.cadastroagendamento.domain.exception.GraphQLCommunicationException;
+import com.medsync.cadastroagendamento.domain.exception.PacienteNotFoundException;
+import com.medsync.cadastroagendamento.domain.exception.UsuarioNotFoundException;
 import com.medsync.cadastroagendamento.domain.gateways.EspecialidadeGateway;
 import com.medsync.cadastroagendamento.domain.gateways.UsuarioGateway;
 import org.slf4j.Logger;
@@ -39,39 +43,32 @@ public class HistoricoGraphQLClient {
     public HistoricoGraphQLClient(RestTemplate restTemplate, 
                                  UsuarioGateway usuarioGateway,
                                  EspecialidadeGateway especialidadeGateway,
-                                  M2MJwtGeneratorService jwtGeneratorService) {
+                                 M2MJwtGeneratorService jwtGeneratorService,
+                                 ObjectMapper objectMapper) {
         this.restTemplate = restTemplate;
         this.usuarioGateway = usuarioGateway;
         this.especialidadeGateway = especialidadeGateway;
         this.jwtGeneratorService = jwtGeneratorService;
-        this.objectMapper = new ObjectMapper();
+        this.objectMapper = objectMapper;
     }
     
-    /**
-     * Salva uma nova consulta no histórico
-     */
     public void salvarConsulta(UUID consultaId, UUID pacienteId, UUID medicoId, UUID especialidadeId, UUID usuarioId,
                               LocalDateTime dataHora, String observacoes, String status) {
         try {
-            // Buscar dados dos usuários
-            Usuario paciente = buscarUsuario(pacienteId);
-            Usuario medico = buscarUsuario(medicoId);
-            Usuario usuario = buscarUsuario(usuarioId);
-            
-            // Buscar dados da especialidade
+            Usuario medico = usuarioGateway.buscarPorId(medicoId)
+                    .orElseThrow(() -> UsuarioNotFoundException.byId(medicoId));
+            Usuario usuario = usuarioGateway.buscarPorId(usuarioId)
+                    .orElseThrow(() -> UsuarioNotFoundException.byId(usuarioId));
             Especialidade especialidade = especialidadeGateway.buscarPorId(especialidadeId)
-                .orElseThrow(() -> new RuntimeException("Especialidade não encontrada: " + especialidadeId));
+                    .orElseThrow(() -> EspecialidadeNotFoundException.byId(especialidadeId));
             
-            // Construir mutation GraphQL
             String mutation = buildSalvarHistoricoMutation(
-                consultaId, dataHora, status, observacoes,
-                paciente, medico, usuario, especialidade
+                consultaId, pacienteId, medico, especialidade, usuario,
+                dataHora, status, observacoes
             );
             
-            // Executar mutation
             Map<String, Object> response = executeGraphQLMutation(mutation);
             
-            // Verificar se houve erros na resposta
             if (response.containsKey("errors")) {
                 logger.error("Erro do GraphQL: {}", response.get("errors"));
                 throw new RuntimeException("Erro ao salvar consulta no histórico: " + response.get("errors"));
@@ -79,37 +76,34 @@ public class HistoricoGraphQLClient {
             
             logger.info("Consulta {} salva no histórico com sucesso", consultaId);
             
+        } catch (UsuarioNotFoundException | EspecialidadeNotFoundException e) {
+            logger.error("Erro ao buscar dados para consulta {}: {}", consultaId, e.getMessage());
+            throw e; // Re-lança a exceção específica
         } catch (Exception e) {
             logger.error("Erro ao salvar consulta {} no histórico", consultaId, e);
             throw new RuntimeException("Falha ao salvar consulta no histórico", e);
         }
     }
     
-    /**
-     * Atualiza uma consulta existente no histórico
-     */
     public void atualizarConsulta(UUID consultaId, UUID pacienteId, UUID medicoId, UUID especialidadeId, UUID usuarioId,
                                   LocalDateTime dataHora, String observacoes, String status) {
         try {
-            // Buscar dados dos usuários
-            Usuario paciente = buscarUsuario(pacienteId);
-            Usuario medico = buscarUsuario(medicoId);
-            Usuario usuario = buscarUsuario(usuarioId);
-            
-            // Buscar dados da especialidade
+            // Buscar dados completos do médico, especialidade e usuário no agendamento-api
+            // Apenas o paciente será validado pelo historico-api
+            Usuario medico = usuarioGateway.buscarPorId(medicoId)
+                    .orElseThrow(() -> UsuarioNotFoundException.byId(medicoId));
+            Usuario usuario = usuarioGateway.buscarPorId(usuarioId)
+                    .orElseThrow(() -> UsuarioNotFoundException.byId(usuarioId));
             Especialidade especialidade = especialidadeGateway.buscarPorId(especialidadeId)
-                .orElseThrow(() -> new RuntimeException("Especialidade não encontrada: " + especialidadeId));
+                    .orElseThrow(() -> EspecialidadeNotFoundException.byId(especialidadeId));
             
-            // Construir mutation GraphQL
             String mutation = buildAtualizarHistoricoMutation(
-                consultaId, dataHora, status, observacoes,
-                paciente, medico, usuario, especialidade
+                consultaId, pacienteId, medico, especialidade, usuario,
+                dataHora, status, observacoes
             );
             
-            // Executar mutation
             Map<String, Object> response = executeGraphQLMutation(mutation);
             
-            // Verificar se houve erros na resposta
             if (response.containsKey("errors")) {
                 logger.error("Erro do GraphQL: {}", response.get("errors"));
                 throw new RuntimeException("Erro ao atualizar consulta no histórico: " + response.get("errors"));
@@ -117,19 +111,44 @@ public class HistoricoGraphQLClient {
             
             logger.info("Consulta {} atualizada no histórico com sucesso", consultaId);
             
+        } catch (UsuarioNotFoundException | EspecialidadeNotFoundException e) {
+            logger.error("Erro ao buscar dados para atualização da consulta {}: {}", consultaId, e.getMessage());
+            throw e; // Re-lança a exceção específica
         } catch (Exception e) {
             logger.error("Erro ao atualizar consulta {} no histórico", consultaId, e);
             throw new RuntimeException("Falha ao atualizar consulta no histórico", e);
         }
     }
     
-    private Usuario buscarUsuario(UUID usuarioId) {
-        return usuarioGateway.buscarPorId(usuarioId)
-            .orElseThrow(() -> new RuntimeException("Usuário não encontrado: " + usuarioId));
+    public void atualizarStatusConsulta(UUID consultaId, String status, String observacoes, UUID usuarioId) {
+        try {
+            // Buscar dados completos do usuário no agendamento-api
+            Usuario usuario = usuarioGateway.buscarPorId(usuarioId)
+                    .orElseThrow(() -> UsuarioNotFoundException.byId(usuarioId));
+            
+            String mutation = buildAtualizarStatusMutation(consultaId, status, observacoes, usuario);
+            
+            Map<String, Object> response = executeGraphQLMutation(mutation);
+            
+            if (response.containsKey("errors")) {
+                logger.error("Erro do GraphQL: {}", response.get("errors"));
+                throw new RuntimeException("Erro ao atualizar status da consulta no histórico: " + response.get("errors"));
+            }
+            
+            logger.info("Status da consulta {} atualizado no histórico com sucesso", consultaId);
+            
+        } catch (UsuarioNotFoundException e) {
+            logger.error("Erro ao buscar usuário para atualização de status da consulta {}: {}", consultaId, e.getMessage());
+            throw e; // Re-lança a exceção específica
+        } catch (Exception e) {
+            logger.error("Erro ao atualizar status da consulta {} no histórico", consultaId, e);
+            throw new RuntimeException("Falha ao atualizar status da consulta no histórico", e);
+        }
     }
     
-    private String buildSalvarHistoricoMutation(UUID consultaId, LocalDateTime dataHora, String status, String observacoes,
-                                               Usuario paciente, Usuario medico, Usuario usuario, Especialidade especialidade) {
+    
+    private String buildSalvarHistoricoMutation(UUID consultaId, UUID pacienteId, Usuario medico, Especialidade especialidade, Usuario usuario,
+                                               LocalDateTime dataHora, String status, String observacoes) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
         
         return String.format("""
@@ -142,15 +161,12 @@ public class HistoricoGraphQLClient {
                     tipoEvento: "CRIADA"
                     timestamp: "%s"
                     pacienteId: "%s"
-                    pacienteNome: "%s"
-                    pacienteCpf: "%s"
-                    pacienteEmail: "%s"
-                    pacienteDataNascimento: "%s"
                     medicoId: "%s"
                     medicoNome: "%s"
                     medicoCpf: "%s"
                     medicoEmail: "%s"
-                    medicoEspecialidade: "%s"
+                    especialidadeId: "%s"
+                    especialidadeNome: "%s"
                     usuarioId: "%s"
                     usuarioNome: "%s"
                     usuarioEmail: "%s"
@@ -172,15 +188,12 @@ public class HistoricoGraphQLClient {
             status,
             observacoes != null ? observacoes : "",
             LocalDateTime.now().format(formatter),
-            paciente.getId(),
-            paciente.getNome(),
-            paciente.getCpf(),
-            paciente.getEmail(),
-            paciente.getDataNascimento().format(DateTimeFormatter.ISO_LOCAL_DATE),
+            pacienteId,
             medico.getId(),
             medico.getNome(),
             medico.getCpf(),
             medico.getEmail(),
+            especialidade.getId(),
             especialidade.getNome(),
             usuario.getId(),
             usuario.getNome(),
@@ -189,8 +202,8 @@ public class HistoricoGraphQLClient {
         );
     }
     
-    private String buildAtualizarHistoricoMutation(UUID consultaId, LocalDateTime dataHora, String status, String observacoes,
-                                                  Usuario paciente, Usuario medico, Usuario usuario, Especialidade especialidade) {
+    private String buildAtualizarHistoricoMutation(UUID consultaId, UUID pacienteId, Usuario medico, Especialidade especialidade, Usuario usuario,
+                                                  LocalDateTime dataHora, String status, String observacoes) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
         
         return String.format("""
@@ -203,15 +216,12 @@ public class HistoricoGraphQLClient {
                     tipoEvento: "EDITADA"
                     timestamp: "%s"
                     pacienteId: "%s"
-                    pacienteNome: "%s"
-                    pacienteCpf: "%s"
-                    pacienteEmail: "%s"
-                    pacienteDataNascimento: "%s"
                     medicoId: "%s"
                     medicoNome: "%s"
                     medicoCpf: "%s"
                     medicoEmail: "%s"
-                    medicoEspecialidade: "%s"
+                    especialidadeId: "%s"
+                    especialidadeNome: "%s"
                     usuarioId: "%s"
                     usuarioNome: "%s"
                     usuarioEmail: "%s"
@@ -233,16 +243,60 @@ public class HistoricoGraphQLClient {
             status,
             observacoes != null ? observacoes : "",
             LocalDateTime.now().format(formatter),
-            paciente.getId(),
-            paciente.getNome(),
-            paciente.getCpf(),
-            paciente.getEmail(),
-            paciente.getDataNascimento().format(DateTimeFormatter.ISO_LOCAL_DATE),
+            pacienteId,
             medico.getId(),
             medico.getNome(),
             medico.getCpf(),
             medico.getEmail(),
+            especialidade.getId(),
             especialidade.getNome(),
+            usuario.getId(),
+            usuario.getNome(),
+            usuario.getEmail(),
+            usuario.getRole().getTipo().name()
+        );
+    }
+    
+    private String buildAtualizarStatusMutation(UUID consultaId, String status, String observacoes, Usuario usuario) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+        
+        return String.format("""
+            mutation AtualizarStatus {
+                updateAppointment(updateAppointmentInput: {
+                    consultaId: "%s"
+                    dataHora: "%s"
+                    status: "%s"
+                    observacoes: "%s"
+                    tipoEvento: "STATUS_UPDATE"
+                    timestamp: "%s"
+                    pacienteId: "00000000-0000-0000-0000-000000000000"
+                    medicoId: "00000000-0000-0000-0000-000000000000"
+                    medicoNome: "Sistema"
+                    medicoCpf: "00000000000"
+                    medicoEmail: "sistema@medsync.com"
+                    especialidadeId: "00000000-0000-0000-0000-000000000000"
+                    especialidadeNome: "Sistema"
+                    usuarioId: "%s"
+                    usuarioNome: "%s"
+                    usuarioEmail: "%s"
+                    usuarioRole: "%s"
+                }) {
+                    patient {
+                        id
+                        name
+                    }
+                    appointments {
+                        id
+                        status
+                    }
+                }
+            }
+            """,
+            consultaId,
+            LocalDateTime.now().format(formatter),
+            status,
+            observacoes != null ? observacoes : "",
+            LocalDateTime.now().format(formatter),
             usuario.getId(),
             usuario.getNome(),
             usuario.getEmail(),
@@ -267,12 +321,13 @@ public class HistoricoGraphQLClient {
             
             logger.debug("Resposta do GraphQL: {}", response);
             
-            // Parse da resposta JSON
             return objectMapper.readValue(response, Map.class);
             
+        } catch (GraphQLCommunicationException e) {
+            throw e; // Re-lança exceção específica de comunicação
         } catch (Exception e) {
             logger.error("Erro ao executar mutation GraphQL", e);
-            throw new RuntimeException("Falha na comunicação com serviço de histórico", e);
+            throw new GraphQLCommunicationException("Falha na comunicação com serviço de histórico", e);
         }
     }
 }

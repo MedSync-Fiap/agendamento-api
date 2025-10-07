@@ -32,7 +32,6 @@ public class Usuario {
         this.atualizadoEm = atualizadoEm;
     }
 
-    // Getters e Setters
     public UUID getId() {
         return id;
     }

@@ -16,10 +16,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
-/**
- * Aspect para interceptar métodos anotados com @RequirePermission
- * e validar se o usuário autenticado possui as permissões necessárias.
- */
 @Aspect
 @Component
 public class PermissionAspect {

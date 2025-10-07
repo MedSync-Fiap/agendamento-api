@@ -1,0 +1,660 @@
+{
+  "info": {
+    "name": "MedSync - Agendamento API",
+    "description": "Coleção da API de Agendamento do MedSync com todos os endpoints atualizados.\n\n🔄 FLUXO ATUALIZADO:\n1. Criar Paciente (POST /pacientes) - OBRIGATÓRIO\n2. Criar Consulta (POST /consultas) - Usa paciente pré-cadastrado\n\n⚠️ IMPORTANTE: Pacientes devem ser criados explicitamente antes de agendar consultas!",
+    "version": "2.1.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{jwt_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "jwt_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "usuario_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "paciente_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "medico_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "consulta_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "especialidade_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "🔄 Fluxo Completo - Paciente + Consulta",
+      "item": [
+        {
+          "name": "1. Criar Paciente (OBRIGATÓRIO)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Maria Santos\",\n  \"cpf\": \"98765432100\",\n  \"email\": \"maria.santos@email.com\",\n  \"dataNascimento\": \"1985-05-15\",\n  \"observacoes\": \"Paciente para teste do fluxo completo\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/pacientes",
+              "host": ["{{base_url}}"],
+              "path": ["pacientes"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const responseJson = pm.response.json();",
+                  "    if (responseJson.id) {",
+                  "        pm.collectionVariables.set('paciente_id', responseJson.id);",
+                  "        console.log('✅ Paciente criado com ID:', responseJson.id);",
+                  "    }",
+                  "} else {",
+                  "    console.log('❌ Erro ao criar paciente:', pm.response.text());",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "2. Criar Consulta (Usa Paciente Criado)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pacienteId\": \"{{paciente_id}}\",\n  \"medicoId\": \"{{medico_id}}\",\n  \"especialidadeId\": \"{{especialidade_id}}\",\n  \"dataHora\": \"2024-12-25T14:30:00\",\n  \"observacoes\": \"Consulta de rotina - fluxo completo\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/consultas",
+              "host": ["{{base_url}}"],
+              "path": ["consultas"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.id) {",
+                  "        pm.collectionVariables.set('consulta_id', response.id);",
+                  "        console.log('✅ Consulta criada com ID:', response.id);",
+                  "    }",
+                  "} else {",
+                  "    console.log('❌ Erro ao criar consulta:', pm.response.text());",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "3. ❌ Teste de Erro - Consulta sem Paciente",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pacienteId\": \"paciente-inexistente\",\n  \"medicoId\": \"{{medico_id}}\",\n  \"especialidadeId\": \"{{especialidade_id}}\",\n  \"dataHora\": \"2024-12-25T14:30:00\",\n  \"observacoes\": \"Esta consulta deve falhar\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/consultas",
+              "host": ["{{base_url}}"],
+              "path": ["consultas"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 500) {",
+                  "    console.log('✅ Erro esperado - Paciente não encontrado:', pm.response.text());",
+                  "} else {",
+                  "    console.log('❌ Erro inesperado:', pm.response.text());",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Autenticação",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@medsync.com\",\n  \"senha\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            }
+          },
+          "response": [
+            {
+              "name": "Login Success",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"admin@medsync.com\",\n  \"senha\": \"admin123\"\n}"
+                },
+                "url": {
+                  "raw": "{{base_url}}/auth/login",
+                  "host": ["{{base_url}}"],
+                  "path": ["auth", "login"]
+                }
+              },
+              "status": "OK",
+              "code": 200,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "cookie": [],
+              "body": "{\n  \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\",\n  \"usuarioId\": \"123e4567-e89b-12d3-a456-426614174000\",\n  \"nome\": \"Admin\",\n  \"email\": \"admin@medsync.com\",\n  \"role\": \"ADMIN\"\n}"
+            }
+          ],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('jwt_token', response.token);",
+                  "    pm.collectionVariables.set('usuario_id', response.usuarioId);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Usuários",
+      "item": [
+        {
+          "name": "Criar Usuário",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"João Silva\",\n  \"email\": \"joao.silva@email.com\",\n  \"senha\": \"senha123\",\n  \"cpf\": \"12345678901\",\n  \"dataNascimento\": \"1990-01-01\",\n  \"roleId\": \"550e8400-e29b-41d4-a716-446655440001\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/usuarios",
+              "host": ["{{base_url}}"],
+              "path": ["usuarios"]
+            }
+          }
+        },
+        {
+          "name": "Listar Usuários",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/usuarios",
+              "host": ["{{base_url}}"],
+              "path": ["usuarios"]
+            }
+          }
+        },
+        {
+          "name": "Buscar Usuário por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/usuarios/{{usuario_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["usuarios", "{{usuario_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Buscar Usuários por Role (MEDICO)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/usuarios/role/MEDICO",
+              "host": ["{{base_url}}"],
+              "path": ["usuarios", "role", "MEDICO"]
+            }
+          }
+        },
+        {
+          "name": "Buscar Usuários por Role (PACIENTE)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/usuarios/role/PACIENTE",
+              "host": ["{{base_url}}"],
+              "path": ["usuarios", "role", "PACIENTE"]
+            }
+          }
+        },
+        {
+          "name": "Buscar Usuários por Role (ENFERMEIRO)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/usuarios/role/ENFERMEIRO",
+              "host": ["{{base_url}}"],
+              "path": ["usuarios", "role", "ENFERMEIRO"]
+            }
+          }
+        },
+        {
+          "name": "Buscar Usuários por Role (ADMIN)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/usuarios/role/ADMIN",
+              "host": ["{{base_url}}"],
+              "path": ["usuarios", "role", "ADMIN"]
+            }
+          }
+        },
+        {
+          "name": "Atualizar Usuário",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"João Silva Atualizado\",\n  \"email\": \"joao.silva.novo@email.com\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/usuarios/{{usuario_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["usuarios", "{{usuario_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Deletar Usuário",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/usuarios/{{usuario_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["usuarios", "{{usuario_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Pacientes",
+      "item": [
+        {
+          "name": "Criar Paciente",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"João Silva\",\n  \"cpf\": \"12345678901\",\n  \"email\": \"joao.silva@email.com\",\n  \"dataNascimento\": \"1990-01-01\",\n  \"observacoes\": \"Paciente novo no sistema\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/pacientes",
+              "host": ["{{base_url}}"],
+              "path": ["pacientes"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const responseJson = pm.response.json();",
+                  "    if (responseJson.id) {",
+                  "        pm.collectionVariables.set('paciente_id', responseJson.id);",
+                  "        console.log('Paciente criado com ID:', responseJson.id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "response": []
+        },
+        {
+          "name": "Buscar Paciente por CPF",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/pacientes/cpf/12345678901",
+              "host": ["{{base_url}}"],
+              "path": ["pacientes", "cpf", "12345678901"]
+            }
+          }
+        },
+        {
+          "name": "Buscar Paciente por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/pacientes/{{paciente_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["pacientes", "{{paciente_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Atualizar Paciente",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"João Silva Atualizado\",\n  \"email\": \"joao.silva.novo@email.com\",\n  \"dataNascimento\": \"1990-01-01\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/pacientes/{{paciente_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["pacientes", "{{paciente_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Inativar Paciente",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/pacientes/{{paciente_id}}/inativar",
+              "host": ["{{base_url}}"],
+              "path": ["pacientes", "{{paciente_id}}", "inativar"]
+            }
+          }
+        },
+        {
+          "name": "Reativar Paciente",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/pacientes/{{paciente_id}}/reativar",
+              "host": ["{{base_url}}"],
+              "path": ["pacientes", "{{paciente_id}}", "reativar"]
+            }
+          }
+        },
+        {
+          "name": "Excluir Paciente",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/pacientes/{{paciente_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["pacientes", "{{paciente_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Buscar Histórico Completo",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/pacientes/{{paciente_id}}/historico",
+              "host": ["{{base_url}}"],
+              "path": ["pacientes", "{{paciente_id}}", "historico"]
+            }
+          }
+        },
+        {
+          "name": "Buscar Consulta Específica",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/pacientes/{{paciente_id}}/consultas/{{consulta_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["pacientes", "{{paciente_id}}", "consultas", "{{consulta_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Consultas",
+      "item": [
+        {
+          "name": "Criar Consulta",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pacienteId\": \"{{paciente_id}}\",\n  \"medicoId\": \"{{medico_id}}\",\n  \"especialidadeId\": \"{{especialidade_id}}\",\n  \"dataHora\": \"2024-12-25T14:30:00\",\n  \"observacoes\": \"Consulta de rotina\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/consultas",
+              "host": ["{{base_url}}"],
+              "path": ["consultas"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    const response = pm.response.json();",
+                  "    if (response.id) {",
+                  "        pm.collectionVariables.set('consulta_id', response.id);",
+                  "    }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Buscar Consulta por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/consultas/{{consulta_id}}/paciente/{{paciente_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["consultas", "{{consulta_id}}", "paciente", "{{paciente_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Buscar Consultas por Paciente",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/consultas/paciente/{{paciente_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["consultas", "paciente", "{{paciente_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Atualizar Consulta",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pacienteId\": \"{{paciente_id}}\",\n  \"medicoId\": \"{{medico_id}}\",\n  \"dataHora\": \"2024-12-25T15:00:00\",\n  \"observacoes\": \"Consulta atualizada\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/consultas/{{consulta_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["consultas", "{{consulta_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Especialidades",
+      "item": [
+        {
+          "name": "Listar Especialidades",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/especialidades",
+              "host": ["{{base_url}}"],
+              "path": ["especialidades"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

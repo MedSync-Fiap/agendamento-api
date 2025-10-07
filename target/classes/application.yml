@@ -68,9 +68,9 @@ app:
       issuer: ${JWT_ISSUER:medsync-agendamento-api}
       audience: ${JWT_AUDIENCE:medsync-historico-api}
       private:
-        key: ${JWT_PRIVATE_KEY_PATH:classpath:certs/private_key.pem}
+        key: ${JWT_PRIVATE_KEY_PATH:certs/private_key.pem}
       public:
-        key: ${JWT_PUBLIC_KEY_PATH:classpath:certs/public_key.pem}
+        key: ${JWT_PUBLIC_KEY_PATH:certs/public_key.pem}
       secret: ${JWT_SECRET:mySecretKey123456789012345678901234567890}
       expiration: 86400000
   historico:

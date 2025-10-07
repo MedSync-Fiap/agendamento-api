@@ -2,6 +2,7 @@ package com.medsync.cadastroagendamento.presentation.controllers;
 
 import com.medsync.cadastroagendamento.application.usecases.AtualizarConsultaUseCase;
 import com.medsync.cadastroagendamento.application.usecases.CriarConsultaUseCase;
+import com.medsync.cadastroagendamento.application.usecases.DeletarConsultaUseCase;
 import com.medsync.cadastroagendamento.infrastructure.clients.HistoricoPatientClient;
 import com.medsync.cadastroagendamento.infrastructure.security.RequirePermission;
 import com.medsync.cadastroagendamento.infrastructure.security.SecurityUtils;
@@ -17,6 +18,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -27,13 +31,16 @@ public class ConsultaController {
     
     private final CriarConsultaUseCase criarConsultaUseCase;
     private final AtualizarConsultaUseCase atualizarConsultaUseCase;
+    private final DeletarConsultaUseCase deletarConsultaUseCase;
     private final HistoricoPatientClient historicoPatientClient;
     
     public ConsultaController(CriarConsultaUseCase criarConsultaUseCase,
                             AtualizarConsultaUseCase atualizarConsultaUseCase,
+                            DeletarConsultaUseCase deletarConsultaUseCase,
                             HistoricoPatientClient historicoPatientClient) {
         this.criarConsultaUseCase = criarConsultaUseCase;
         this.atualizarConsultaUseCase = atualizarConsultaUseCase;
+        this.deletarConsultaUseCase = deletarConsultaUseCase;
         this.historicoPatientClient = historicoPatientClient;
     }
     
@@ -46,15 +53,18 @@ public class ConsultaController {
             @ApiResponse(responseCode = "409", description = "Conflito de horário"),
             @ApiResponse(responseCode = "403", description = "Usuário não tem permissão para criar consultas")
     })
-    public ResponseEntity<String> criarConsulta(
+    public ResponseEntity<Map<String, Object>> criarConsulta(
             @Valid @RequestBody CriarConsultaRequest request) {
         UUID usuarioLogadoId = SecurityUtils.getCurrentUserId();
         
-        // Criar consulta via GraphQL no serviço de histórico
-        criarConsultaUseCase.executar(request, usuarioLogadoId);
+        UUID consultaId = criarConsultaUseCase.executar(request, usuarioLogadoId);
         
-        return ResponseEntity.status(HttpStatus.CREATED)
-                .body("Consulta criada com sucesso e enviada para o histórico");
+        // Retornar apenas o ID da consulta criada para evitar busca dupla
+        Map<String, Object> response = new HashMap<>();
+        response.put("id", consultaId);
+        response.put("message", "Consulta criada com sucesso");
+        
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
     
     @GetMapping("/{id}/paciente/{pacienteId}")
@@ -81,11 +91,17 @@ public class ConsultaController {
             @ApiResponse(responseCode = "404", description = "Paciente não encontrado"),
             @ApiResponse(responseCode = "403", description = "Usuário não tem permissão para visualizar histórico")
     })
-    public ResponseEntity<Map<String, Object>> buscarPorPaciente(
+    public ResponseEntity<List<Map<String, Object>>> buscarPorPaciente(
             @Parameter(description = "ID do paciente") @PathVariable UUID pacienteId) {
-        // Buscar histórico completo do paciente no histórico via GraphQL
         Map<String, Object> historico = historicoPatientClient.buscarHistoricoCompleto(pacienteId);
-        return ResponseEntity.ok(historico);
+        
+        if (historico != null && historico.containsKey("appointments")) {
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> appointments = (List<Map<String, Object>>) historico.get("appointments");
+            return ResponseEntity.ok(appointments);
+        }
+        
+        return ResponseEntity.ok(new ArrayList<>());
     }
     
     @PutMapping("/{id}")
@@ -103,10 +119,27 @@ public class ConsultaController {
             @Valid @RequestBody AtualizarConsultaRequest request) {
         UUID usuarioLogadoId = SecurityUtils.getCurrentUserId();
         
-        // Atualizar consulta via GraphQL no serviço de histórico
-        // Os IDs do paciente e médico são obtidos do request
-        atualizarConsultaUseCase.executar(id, request.pacienteId(), request.medicoId(), request, usuarioLogadoId);
+        atualizarConsultaUseCase.executar(id, request, usuarioLogadoId);
         
         return ResponseEntity.ok("Consulta atualizada com sucesso no histórico");
+    }
+    
+    @DeleteMapping("/{id}")
+    @RequirePermission("EXCLUIR_CONSULTA")
+    @Operation(summary = "Deletar consulta", description = "Remove uma consulta do sistema (soft delete)")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Consulta deletada com sucesso"),
+            @ApiResponse(responseCode = "404", description = "Consulta não encontrada"),
+            @ApiResponse(responseCode = "403", description = "Usuário não tem permissão para excluir consultas")
+    })
+    public ResponseEntity<Void> deletarConsulta(
+            @Parameter(description = "ID da consulta") @PathVariable UUID id,
+            @Parameter(description = "ID do paciente") @RequestParam UUID pacienteId) {
+        UUID usuarioLogadoId = SecurityUtils.getCurrentUserId();
+        
+        // Soft delete - marca como inativa ao invés de deletar fisicamente
+        deletarConsultaUseCase.executar(id, pacienteId, usuarioLogadoId);
+        
+        return ResponseEntity.noContent().build();
     }
 }

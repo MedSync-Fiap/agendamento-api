@@ -225,3 +225,6 @@ public
 # Temporary folders
 tmp/
 temp/
+
+# Certificates
+src/main/resources/certs

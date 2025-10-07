@@ -8,7 +8,7 @@ import org.springframework.stereotype.Component;
 
 @Generated(
     value = "org.mapstruct.ap.MappingProcessor",
-    date = "2025-10-03T11:24:51-0300",
+    date = "2025-10-07T10:08:45-0300",
     comments = "version: 1.5.5.Final, compiler: javac, environment: Java 21.0.6 (Amazon.com Inc.)"
 )
 @Component
@@ -48,6 +48,7 @@ public class UsuarioMapperImpl implements UsuarioMapper {
         UsuarioJpaEntity usuarioJpaEntity = new UsuarioJpaEntity();
 
         usuarioJpaEntity.setRole( roleMapper.toJpa( domain.getRole() ) );
+        usuarioJpaEntity.setRoleId( roleToRoleId( domain.getRole() ) );
         usuarioJpaEntity.setId( domain.getId() );
         usuarioJpaEntity.setNome( domain.getNome() );
         usuarioJpaEntity.setCpf( domain.getCpf() );
