@@ -23,7 +23,7 @@ public record CriarUsuarioRequest(
         String senha,
         
         @NotBlank(message = "CPF é obrigatório")
-        @Pattern(regexp = "\\d{11}", message = "CPF deve ter 11 dígitos")
+        @Pattern(regexp = "\\d{11}", message = "CPF deve conter exatamente 11 dígitos")
         String cpf,
         
         @NotNull(message = "Data de nascimento é obrigatória")

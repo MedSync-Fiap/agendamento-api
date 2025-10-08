@@ -1,6 +1,7 @@
 package com.medsync.cadastroagendamento.presentation.dto;
 
 import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 import java.time.LocalDate;
@@ -12,10 +13,11 @@ public record AtualizarPacienteRequest(
         @Email(message = "Email deve ter formato válido")
         String email,
         
-        @Size(min = 11, max = 11, message = "CPF deve ter 11 dígitos")
+        @Pattern(regexp = "\\d{11}", message = "CPF deve conter exatamente 11 dígitos")
         String cpf,
         
         LocalDate dataNascimento,
         
+        @Size(max = 500, message = "Observações devem ter no máximo 500 caracteres")
         String observacoes
 ) {}

@@ -74,7 +74,7 @@ public class PacienteController {
         Map<String, Object> dadosPaciente = historicoPatientClient.buscarPaciente(pacienteId);
         return ResponseEntity.ok(dadosPaciente);
     }
-    
+
     @PutMapping("/{pacienteId}")
     @RequirePermission("EDITAR_USUARIO")
     @Operation(summary = "Atualizar dados do paciente", description = "Atualiza os dados de um paciente no histórico")
@@ -92,50 +92,6 @@ public class PacienteController {
         return ResponseEntity.ok(paciente);
     }
     
-    @DeleteMapping("/{pacienteId}")
-    @RequirePermission("EXCLUIR_USUARIO")
-    @Operation(summary = "Excluir paciente", description = "Remove um paciente do sistema (soft delete)")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Paciente excluído com sucesso"),
-            @ApiResponse(responseCode = "404", description = "Paciente não encontrado"),
-            @ApiResponse(responseCode = "403", description = "Usuário não tem permissão para excluir pacientes")
-    })
-    public ResponseEntity<String> excluirPaciente(
-            @Parameter(description = "ID do paciente") @PathVariable UUID pacienteId) {
-        
-        historicoPatientClient.excluirPaciente(pacienteId);
-        return ResponseEntity.ok("Paciente excluído com sucesso");
-    }
-    
-    @PutMapping("/{pacienteId}/inativar")
-    @RequirePermission("EDITAR_USUARIO")
-    @Operation(summary = "Inativar paciente", description = "Inativa um paciente no sistema (soft delete)")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Paciente inativado com sucesso"),
-            @ApiResponse(responseCode = "404", description = "Paciente não encontrado"),
-            @ApiResponse(responseCode = "403", description = "Usuário não tem permissão para inativar pacientes")
-    })
-    public ResponseEntity<Map<String, Object>> inativarPaciente(
-            @Parameter(description = "ID do paciente") @PathVariable UUID pacienteId) {
-        
-        Map<String, Object> pacienteInativado = historicoPatientClient.inativarPaciente(pacienteId);
-        return ResponseEntity.ok(pacienteInativado);
-    }
-    
-    @PutMapping("/{pacienteId}/reativar")
-    @RequirePermission("EDITAR_USUARIO")
-    @Operation(summary = "Reativar paciente", description = "Reativa um paciente no sistema")
-    @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Paciente reativado com sucesso"),
-            @ApiResponse(responseCode = "404", description = "Paciente não encontrado"),
-            @ApiResponse(responseCode = "403", description = "Usuário não tem permissão para reativar pacientes")
-    })
-    public ResponseEntity<Map<String, Object>> reativarPaciente(
-            @Parameter(description = "ID do paciente") @PathVariable UUID pacienteId) {
-        
-        Map<String, Object> pacienteReativado = historicoPatientClient.reativarPaciente(pacienteId);
-        return ResponseEntity.ok(pacienteReativado);
-    }
     
     @GetMapping("/{pacienteId}/historico")
     @RequirePermission("VISUALIZAR_HISTORICO")

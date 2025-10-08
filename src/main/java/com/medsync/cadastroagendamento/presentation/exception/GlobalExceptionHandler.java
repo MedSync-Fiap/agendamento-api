@@ -519,6 +519,26 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
     }
     
+    @ExceptionHandler(PacienteAlreadyExistsException.class)
+    public ResponseEntity<ErrorResponse> handlePacienteAlreadyExistsException(
+            PacienteAlreadyExistsException ex, HttpServletRequest request) {
+        
+        log.warn("Patient already exists: {}", ex.getMessage());
+        
+        ErrorResponse errorResponse = createErrorResponse(
+                ex.getErrorCode(),
+                ex.getMessage(),
+                request.getRequestURI(),
+                HttpStatus.CONFLICT.value(),
+                "Conflict",
+                null,
+                ex.getMessage(),
+                ex
+        );
+        
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+    }
+    
     @ExceptionHandler(InvalidCredentialsException.class)
     public ResponseEntity<ErrorResponse> handleInvalidCredentialsException(
             InvalidCredentialsException ex, HttpServletRequest request) {
@@ -557,6 +577,26 @@ public class GlobalExceptionHandler {
         );
         
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
+    }
+
+    @ExceptionHandler(SecurityException.class)
+    public ResponseEntity<ErrorResponse> handleSecurityException(
+            SecurityException ex, HttpServletRequest request) {
+
+        log.error("Security error: {}", ex.getMessage(), ex);
+
+        ErrorResponse errorResponse = createErrorResponse(
+                "401",
+                "Erro de segurança",
+                request.getRequestURI(),
+                HttpStatus.UNAUTHORIZED.value(),
+                "Internal Server Error",
+                null,
+                ex.getMessage(),
+                ex
+        );
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
     }
     
     // ===== EXCEÇÕES GENÉRICAS (FALLBACK) =====

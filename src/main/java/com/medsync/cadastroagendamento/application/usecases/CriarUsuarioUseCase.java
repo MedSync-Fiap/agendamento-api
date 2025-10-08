@@ -46,6 +46,7 @@ public class CriarUsuarioUseCase {
             usuario.setRole(role);
             usuario.setCriadoEm(LocalDateTime.now());
             usuario.setAtualizadoEm(LocalDateTime.now());
+            usuario.setAtivo(true);
             
             return usuarioGateway.salvar(usuario);
         } catch (UsuarioAlreadyExistsException e) {

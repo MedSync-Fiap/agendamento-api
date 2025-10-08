@@ -5,6 +5,7 @@ import com.medsync.cadastroagendamento.application.dto.M2MJwt;
 import com.medsync.cadastroagendamento.application.service.M2MJwtGeneratorService;
 import com.medsync.cadastroagendamento.domain.exception.GraphQLCommunicationException;
 import com.medsync.cadastroagendamento.domain.exception.JwtException;
+import com.medsync.cadastroagendamento.domain.exception.PacienteAlreadyExistsException;
 import com.medsync.cadastroagendamento.domain.exception.PacienteNotFoundException;
 import com.medsync.cadastroagendamento.presentation.dto.AtualizarPacienteRequest;
 import com.medsync.cadastroagendamento.presentation.dto.CriarPacienteRequest;
@@ -52,12 +53,74 @@ public class HistoricoPatientClient {
             throw new PacienteNotFoundException("Paciente não encontrado com CPF: " + cpf, cpf);
         }
     }
+
+    private boolean existeClientePorCpf(String cpf) {
+        try {
+            Map<String, Object> response = buscarPacientePorCpf(cpf);
+            return response != null && !response.isEmpty();
+        } catch (Exception e) {
+            return false;
+        }
+    }
+    
+    private boolean existeClientePorId(UUID pacienteId) {
+        try {
+            Map<String, Object> response = buscarPaciente(pacienteId);
+            return response != null && !response.isEmpty();
+        } catch (Exception e) {
+            return false;
+        }
+    }
+    
+    private void validarDadosAtualizacao(AtualizarPacienteRequest request) {
+        if (request == null) {
+            throw new IllegalArgumentException("Dados de atualização não podem ser nulos");
+        }
+        
+        // Validar se pelo menos um campo foi fornecido para atualização
+        if (request.nome() == null && request.email() == null && 
+            request.cpf() == null && request.dataNascimento() == null && 
+            request.observacoes() == null) {
+            throw new IllegalArgumentException("Pelo menos um campo deve ser fornecido para atualização");
+        }
+        
+        // Validar formato do email se fornecido
+        if (request.email() != null && !request.email().isEmpty()) {
+            if (!request.email().matches("^[A-Za-z0-9+_.-]+@(.+)$")) {
+                throw new IllegalArgumentException("Formato de email inválido");
+            }
+        }
+        
+        // Validar formato do CPF se fornecido
+        if (request.cpf() != null && !request.cpf().isEmpty()) {
+            if (!request.cpf().matches("\\d{11}")) {
+                throw new IllegalArgumentException("CPF deve conter exatamente 11 dígitos");
+            }
+        }
+        
+        // Validar nome se fornecido
+        if (request.nome() != null && !request.nome().isEmpty()) {
+            if (request.nome().length() < 2 || request.nome().length() > 100) {
+                throw new IllegalArgumentException("Nome deve ter entre 2 e 100 caracteres");
+            }
+        }
+        
+        // Validar observações se fornecidas
+        if (request.observacoes() != null && request.observacoes().length() > 500) {
+            throw new IllegalArgumentException("Observações devem ter no máximo 500 caracteres");
+        }
+    }
     
     public Map<String, Object> criarPaciente(CriarPacienteRequest request) {
         try {
+            if (existeClientePorCpf(request.cpf())) {
+                throw PacienteAlreadyExistsException.byCpf(request.cpf());
+            }
             String mutation = buildCriarPacienteMutation(request);
             return executeGraphQLMutation(mutation);
             
+        }  catch (PacienteAlreadyExistsException e) {
+            throw e;
         } catch (Exception e) {
             logger.error("Erro ao criar paciente no histórico", e);
             throw new GraphQLCommunicationException("Falha ao criar paciente no histórico", e);
@@ -100,10 +163,17 @@ public class HistoricoPatientClient {
     
     public Map<String, Object> atualizarPaciente(UUID pacienteId, AtualizarPacienteRequest request) {
         try {
+            // Validar dados do request
+            validarDadosAtualizacao(request);
+            
             String mutation = buildAtualizarPacienteMutation(pacienteId, request);
             return executeGraphQLMutation(mutation);
             
         } catch (GraphQLCommunicationException e) {
+            // Verificar se o erro é de paciente não encontrado
+            if (e.getMessage().contains("Paciente não encontrado") || e.getMessage().contains("not found")) {
+                throw new PacienteNotFoundException("Paciente não encontrado com ID: " + pacienteId, pacienteId);
+            }
             throw e; // Re-lança exceção específica de comunicação
         } catch (Exception e) {
             logger.error("Erro ao atualizar paciente {} no histórico", pacienteId, e);
@@ -235,59 +305,33 @@ public class HistoricoPatientClient {
     
     
     private String buildAtualizarPacienteMutation(UUID pacienteId, AtualizarPacienteRequest request) {
-        // A API de histórico não tem mutation específica para atualizar pacientes
-        // Vamos usar updateAppointment para atualizar dados do paciente
-        String consultaId = UUID.randomUUID().toString();
-        String timestamp = java.time.LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-        
+        // Nova mutation específica para atualizar dados do paciente
         return String.format("""
-            mutation UpdateAppointment {
-                updateAppointment(updateAppointmentInput: {
-                    consultaId: "%s"
-                    dataHora: "%s"
-                    status: "ATUALIZADO"
-                    observacoes: "Dados do paciente atualizados"
-                    tipoEvento: "EDITION"
-                    timestamp: "%s"
-                    
-                    # Dados do paciente atualizados
-                    pacienteId: "%s"
-                    pacienteNome: "%s"
-                    pacienteCpf: "%s"
-                    pacienteEmail: "%s"
-                    pacienteDataNascimento: "%s"
-                    
-                    # Dados do médico (dados fictícios para atualização)
-                    medicoId: "00000000-0000-0000-0000-000000000000"
-                    medicoNome: "Sistema"
-                    medicoCpf: "00000000000"
-                    medicoEmail: "sistema@medsync.com"
-                    medicoEspecialidade: "Sistema"
-                    
-                    # Dados do usuário (dados fictícios para atualização)
-                    usuarioId: "00000000-0000-0000-0000-000000000000"
-                    usuarioNome: "Sistema"
-                    usuarioEmail: "sistema@medsync.com"
-                    usuarioRole: "SISTEMA"
+            mutation AtualizarPaciente {
+                updatePatient(patientId: "%s", patientInput: {
+                    nome: "%s"
+                    cpf: "%s"
+                    email: "%s"
+                    dataNascimento: "%s"
+                    observacoes: "%s"
                 }) {
-                    patient {
-                        id
-                        name
-                        cpf
+                    id
+                    nome
+                    cpf
                     email
-                        dateOfBirth
-                    }
+                    dataNascimento
+                    observacoes
+                    ativo
+                    atualizadoEm
                 }
             }
             """,
-            consultaId,
-            java.time.LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
-            timestamp,
             pacienteId.toString(),
             request.nome() != null ? request.nome() : "",
             request.cpf() != null ? request.cpf() : "",
             request.email() != null ? request.email() : "",
-            request.dataNascimento() != null ? request.dataNascimento().format(DateTimeFormatter.ISO_LOCAL_DATE) : ""
+            request.dataNascimento() != null ? request.dataNascimento().format(DateTimeFormatter.ISO_LOCAL_DATE) : "",
+            request.observacoes() != null ? request.observacoes() : ""
         );
     }
     
@@ -369,6 +413,10 @@ public class HistoricoPatientClient {
                     medicoEmail: "sistema@medsync.com"
                     medicoEspecialidade: "Sistema"
 
+                    # Dados da especialidade (obrigatórios)
+                    especialidadeId: "00000000-0000-0000-0000-000000000000"
+                    especialidadeNome: "Sistema"
+
                     # Dados do usuário (dados fictícios para inativação)
                     usuarioId: "00000000-0000-0000-0000-000000000000"
                     usuarioNome: "Sistema"
@@ -417,6 +465,10 @@ public class HistoricoPatientClient {
                     medicoCpf: "00000000000"
                     medicoEmail: "sistema@medsync.com"
                     medicoEspecialidade: "Sistema"
+
+                    # Dados da especialidade (obrigatórios)
+                    especialidadeId: "00000000-0000-0000-0000-000000000000"
+                    especialidadeNome: "Sistema"
 
                     # Dados do usuário (dados fictícios para reativação)
                     usuarioId: "00000000-0000-0000-0000-000000000000"

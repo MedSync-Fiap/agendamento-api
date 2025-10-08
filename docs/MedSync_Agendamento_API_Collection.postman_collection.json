@@ -1,8 +1,8 @@
 {
   "info": {
     "name": "MedSync - Agendamento API",
-    "description": "Coleção da API de Agendamento do MedSync com todos os endpoints atualizados.\n\n🔄 FLUXO ATUALIZADO:\n1. Criar Paciente (POST /pacientes) - OBRIGATÓRIO\n2. Criar Consulta (POST /consultas) - Usa paciente pré-cadastrado\n\n⚠️ IMPORTANTE: Pacientes devem ser criados explicitamente antes de agendar consultas!",
-    "version": "2.1.0",
+    "description": "Coleção da API de Agendamento do MedSync com todos os endpoints atualizados.\n\n🔄 FLUXO ATUALIZADO:\n1. Criar Paciente (POST /pacientes) - OBRIGATÓRIO\n2. Criar Consulta (POST /consultas) - Usa paciente pré-cadastrado\n\n✨ MELHORIAS IMPLEMENTADAS:\n- ✅ Nova mutation updatePatient específica para edição de pacientes\n- ✅ Validações robustas (existência, formato, tamanho)\n- ✅ Atualização parcial (apenas campos fornecidos)\n- ✅ Tratamento completo de exceções\n- ✅ Logs detalhados de sucesso/erro\n- ✅ Retorno direto dos dados atualizados do paciente\n\n⚠️ IMPORTANTE: Pacientes devem ser criados explicitamente antes de agendar consultas!",
+    "version": "2.2.0",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -53,145 +53,6 @@
     }
   ],
   "item": [
-    {
-      "name": "🔄 Fluxo Completo - Paciente + Consulta",
-      "item": [
-        {
-          "name": "1. Criar Paciente (OBRIGATÓRIO)",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"nome\": \"Maria Santos\",\n  \"cpf\": \"98765432100\",\n  \"email\": \"maria.santos@email.com\",\n  \"dataNascimento\": \"1985-05-15\",\n  \"observacoes\": \"Paciente para teste do fluxo completo\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{base_url}}/pacientes",
-              "host": ["{{base_url}}"],
-              "path": ["pacientes"]
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 201) {",
-                  "    const responseJson = pm.response.json();",
-                  "    if (responseJson.id) {",
-                  "        pm.collectionVariables.set('paciente_id', responseJson.id);",
-                  "        console.log('✅ Paciente criado com ID:', responseJson.id);",
-                  "    }",
-                  "} else {",
-                  "    console.log('❌ Erro ao criar paciente:', pm.response.text());",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "response": []
-        },
-        {
-          "name": "2. Criar Consulta (Usa Paciente Criado)",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"pacienteId\": \"{{paciente_id}}\",\n  \"medicoId\": \"{{medico_id}}\",\n  \"especialidadeId\": \"{{especialidade_id}}\",\n  \"dataHora\": \"2024-12-25T14:30:00\",\n  \"observacoes\": \"Consulta de rotina - fluxo completo\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{base_url}}/consultas",
-              "host": ["{{base_url}}"],
-              "path": ["consultas"]
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 201) {",
-                  "    const response = pm.response.json();",
-                  "    if (response.id) {",
-                  "        pm.collectionVariables.set('consulta_id', response.id);",
-                  "        console.log('✅ Consulta criada com ID:', response.id);",
-                  "    }",
-                  "} else {",
-                  "    console.log('❌ Erro ao criar consulta:', pm.response.text());",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "response": []
-        },
-        {
-          "name": "3. ❌ Teste de Erro - Consulta sem Paciente",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"pacienteId\": \"paciente-inexistente\",\n  \"medicoId\": \"{{medico_id}}\",\n  \"especialidadeId\": \"{{especialidade_id}}\",\n  \"dataHora\": \"2024-12-25T14:30:00\",\n  \"observacoes\": \"Esta consulta deve falhar\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{base_url}}/consultas",
-              "host": ["{{base_url}}"],
-              "path": ["consultas"]
-            }
-          },
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "if (pm.response.code === 500) {",
-                  "    console.log('✅ Erro esperado - Paciente não encontrado:', pm.response.text());",
-                  "} else {",
-                  "    console.log('❌ Erro inesperado:', pm.response.text());",
-                  "}"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ],
-          "response": []
-        }
-      ]
-    },
     {
       "name": "Autenticação",
       "item": [
@@ -282,7 +143,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nome\": \"João Silva\",\n  \"email\": \"joao.silva@email.com\",\n  \"senha\": \"senha123\",\n  \"cpf\": \"12345678901\",\n  \"dataNascimento\": \"1990-01-01\",\n  \"roleId\": \"550e8400-e29b-41d4-a716-446655440001\"\n}"
+              "raw": "{\n  \"nome\": \"Ana Costa\",\n  \"email\": \"ana.costa@medsync.com\",\n  \"senha\": \"senha123\",\n  \"cpf\": \"12345678901\",\n  \"dataNascimento\": \"1990-01-01\",\n  \"roleId\": \"550e8400-e29b-41d4-a716-446655440001\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/usuarios",
@@ -470,6 +331,47 @@
           }
         },
         {
+          "name": "Buscar Paciente por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/pacientes/{{paciente_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["pacientes", "{{paciente_id}}"]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const responseJson = pm.response.json();",
+                  "    console.log('✅ Paciente encontrado:', responseJson);",
+                  "    ",
+                  "    // Verificar se o paciente existe",
+                  "    if (responseJson.id) {",
+                  "        console.log('ID do paciente:', responseJson.id);",
+                  "    }",
+                  "    if (responseJson.nome) {",
+                  "        console.log('Nome do paciente:', responseJson.nome);",
+                  "    }",
+                  "    if (responseJson.email) {",
+                  "        console.log('Email do paciente:', responseJson.email);",
+                  "    }",
+                  "} else if (pm.response.code === 404) {",
+                  "    console.log('❌ Paciente não encontrado');",
+                  "} else {",
+                  "    console.log('❌ Erro ao buscar paciente:', pm.response.text());",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
           "name": "Atualizar Paciente",
           "request": {
             "method": "PUT",
@@ -481,50 +383,109 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"nome\": \"João Silva Atualizado\",\n  \"email\": \"joao.silva.novo@email.com\",\n  \"dataNascimento\": \"1990-01-01\"\n}"
+              "raw": "{\n  \"nome\": \"Carlos Oliveira Atualizado\",\n  \"email\": \"carlos.oliveira.novo@medsync.com\",\n  \"cpf\": \"98765432100\",\n  \"dataNascimento\": \"1985-05-15\",\n  \"observacoes\": \"Dados atualizados com sucesso - mutation updatePatient\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
               "raw": "{{base_url}}/pacientes/{{paciente_id}}",
               "host": ["{{base_url}}"],
               "path": ["pacientes", "{{paciente_id}}"]
             }
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const responseJson = pm.response.json();",
+                  "    console.log('✅ Paciente atualizado com sucesso via updatePatient:', responseJson);",
+                  "    ",
+                  "    // Verificar se os dados foram atualizados",
+                  "    if (responseJson.nome) {",
+                  "        console.log('Nome atualizado:', responseJson.nome);",
+                  "    }",
+                  "    if (responseJson.email) {",
+                  "        console.log('Email atualizado:', responseJson.email);",
+                  "    }",
+                  "    if (responseJson.cpf) {",
+                  "        console.log('CPF atualizado:', responseJson.cpf);",
+                  "    }",
+                  "    if (responseJson.atualizadoEm) {",
+                  "        console.log('Data de atualização:', responseJson.atualizadoEm);",
+                  "    }",
+                  "    if (responseJson.ativo !== undefined) {",
+                  "        console.log('Status ativo:', responseJson.ativo);",
+                  "    }",
+                  "} else if (pm.response.code === 404) {",
+                  "    console.log('❌ Paciente não encontrado');",
+                  "} else if (pm.response.code === 400) {",
+                  "    console.log('❌ Dados inválidos:', pm.response.text());",
+                  "} else {",
+                  "    console.log('❌ Erro ao atualizar paciente:', pm.response.text());",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
         },
         {
-          "name": "Inativar Paciente",
+          "name": "Atualizar Paciente - Parcial",
           "request": {
             "method": "PUT",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/pacientes/{{paciente_id}}/inativar",
-              "host": ["{{base_url}}"],
-              "path": ["pacientes", "{{paciente_id}}", "inativar"]
-            }
-          }
-        },
-        {
-          "name": "Reativar Paciente",
-          "request": {
-            "method": "PUT",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/pacientes/{{paciente_id}}/reativar",
-              "host": ["{{base_url}}"],
-              "path": ["pacientes", "{{paciente_id}}", "reativar"]
-            }
-          }
-        },
-        {
-          "name": "Excluir Paciente",
-          "request": {
-            "method": "DELETE",
-            "header": [],
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"novo.email@medsync.com\",\n  \"observacoes\": \"Apenas email e observações atualizadas\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
               "raw": "{{base_url}}/pacientes/{{paciente_id}}",
               "host": ["{{base_url}}"],
               "path": ["pacientes", "{{paciente_id}}"]
             }
-          }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const responseJson = pm.response.json();",
+                  "    console.log('✅ Atualização parcial realizada via updatePatient:', responseJson);",
+                  "    ",
+                  "    // Verificar campos atualizados",
+                  "    if (responseJson.email) {",
+                  "        console.log('Email atualizado para:', responseJson.email);",
+                  "    }",
+                  "    if (responseJson.observacoes) {",
+                  "        console.log('Observações atualizadas:', responseJson.observacoes);",
+                  "    }",
+                  "    if (responseJson.atualizadoEm) {",
+                  "        console.log('Data de atualização:', responseJson.atualizadoEm);",
+                  "    }",
+                  "} else {",
+                  "    console.log('❌ Erro na atualização parcial:', pm.response.text());",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
         },
         {
           "name": "Buscar Histórico Completo",
